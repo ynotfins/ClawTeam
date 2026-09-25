@@ -1,0 +1,26 @@
+{
+  "mcpServers": {
+    "agentcore-gateway": {
+      "type": "http",
+      "url": "http://127.0.0.1:8080/mcp",
+      "headers": {
+        "Authorization": "Bearer ${BIFROST_MCP_VIRTUAL_KEY}"
+      }
+    },
+    "playwright": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@latest"
+      ]
+    },
+    "comfyui": {
+      "type": "stdio",
+      "command": "C:\\Users\\ynotf\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+      "args": [
+        "D:\\ComfyUI\\comfyui_mcp.py"
+      ]
+    }
+  }
+}

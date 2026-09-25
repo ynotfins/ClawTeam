@@ -1,0 +1,17 @@
+# ClawTeam workspace — Cursor rules (legacy format; canonical rules live in .rules/)
+
+- BLUEPRINT.md is the absolute canonical truth for every sub-agent workspace. Section 3
+  (AGENT SYSTEM PROMPT) is rewritten by the `plan` agent after every step and supersedes
+  prior instructions for the `agent` lane.
+- Follow the 6-lane swarm loop: read BLUEPRINT.md → pull tasks → execute with evidence →
+  report to `plan` → poll. Never exit after one task.
+- Styling law: all generated output uses the 4-token theme system in
+  `design/theme.tokens.json` (light-google, light-orange, dark-speakeasy, dark-orange).
+  Never hardcode colors, radii, shadows, or spacing at component level.
+- Secrets law: secrets exist only as Windows environment variables (OPENROUTER_API_KEY,
+  TWILIO_API_KEY, SENDGRID_API_KEY, OPENMEMORY_API_KEY, ...). Read from the environment at
+  runtime; never write values to files, code, logs, prompts, or memory.
+- Memory law: durable facts go to local OpenMemory/mem0 via the `oi-openmemory-prod`
+  key structure (see .rules/memory-openmemory.md).
+- Full canonical rule pack: .rules/design-system.md, .rules/security-secrets.md,
+  .rules/memory-openmemory.md, .rules/swarm-operations.md.

@@ -4,44 +4,129 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ClawTeam Nexus</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <!-- RGDS (@r3lentless/rgds-web 1.1.0) — canonical design system. -->
+    <link rel="stylesheet" href="/rgds/tokens.css">
+    <link rel="stylesheet" href="/rgds/interaction.css">
+    <link rel="stylesheet" href="/rgds/components.css">
+    <link rel="stylesheet" href="/rgds/animations.css">
+    <link rel="stylesheet" href="/rgds/form-factor.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            color-scheme: dark;
-            /* Premium Dark Theme */
-            --bg-color: #050505;
-            --surface-color: rgba(20, 20, 20, 0.6);
-            --surface-hover: rgba(35, 35, 35, 0.7);
-            --surface-active: rgba(45, 45, 45, 0.8);
-            --border-color: rgba(255, 255, 255, 0.08);
-            --border-hover: rgba(255, 255, 255, 0.15);
+            color-scheme: light;
+            /* Board alias layer — every value resolves from RGDS tokens
+               (static/rgds/tokens.css). Theme switching is RGDS-native:
+               :root[data-theme="primary-light"|"secondary-light"|"primary-dark"|"secondary-dark"].
+               The only color literals below are RGDS's own published scrim
+               fallback (oklch black / 48% alpha, mirrored from rgds
+               components.css var() defaults) and board-domain sizes. */
+            --bg-color: var(--md-sys-color-surface);
+            --surface-color: var(--md-sys-color-surface-container);
+            --surface-hover: var(--md-sys-color-surface-container-high);
+            --surface-active: var(--md-sys-color-surface-container-highest);
+            --surface-solid: var(--md-sys-color-surface-container);
+            --border-color: var(--md-sys-color-outline-variant);
+            --border-hover: var(--md-sys-color-outline);
+            --sidebar-bg: color-mix(in srgb, var(--md-sys-color-surface-container) 72%, transparent);
+            --field-bg: color-mix(in srgb, var(--md-sys-color-on-surface) 5%, transparent);
+            --raise-bg: color-mix(in srgb, var(--md-sys-color-on-surface) 4%, transparent);
+            --raise-bg-hover: color-mix(in srgb, var(--md-sys-color-on-surface) 7%, transparent);
+            --sink-bg: color-mix(in srgb, var(--md-sys-color-scrim, oklch(0% 0 0 / 0.48)) 80%, transparent);
+            --sink2-bg: color-mix(in srgb, var(--md-sys-color-on-surface) 2%, transparent);
+            --chip-bg: color-mix(in srgb, var(--md-sys-color-on-surface) 10%, transparent);
+            --col-bg: color-mix(in srgb, var(--md-sys-color-surface-container) 80%, transparent);
+            --col-head-bg: color-mix(in srgb, var(--md-sys-color-scrim, oklch(0% 0 0 / 0.48)) 40%, transparent);
             /* Typography */
-            --text-primary: #ffffff;
-            --text-secondary: #9ca3af;
-            --text-tertiary: #6b7280;
-            /* Accents */
-            --accent-glow: rgba(99, 102, 241, 0.4);
-            --color-pending: #f59e0b;
-            --color-progress: #3b82f6;
-            --color-completed: #10b981;
-            --color-blocked: #ef4444;
-            --color-broadcast: #a855f7;
-            /* Metrics */
-            --radius-lg: 16px;
-            --radius-md: 12px;
-            --radius-sm: 8px;
+            --text-primary: var(--md-sys-color-on-surface);
+            --text-secondary: color-mix(in srgb, var(--md-sys-color-on-surface) 70%, var(--md-sys-color-surface));
+            --text-tertiary: color-mix(in srgb, var(--md-sys-color-on-surface) 45%, var(--md-sys-color-surface));
+            /* Accents / status (RGDS roles) */
+            --accent-glow: color-mix(in srgb, var(--md-sys-color-primary) 40%, transparent);
+            --color-pending: var(--md-sys-color-warning);
+            --color-progress: var(--md-sys-color-info);
+            --color-completed: var(--md-sys-color-success);
+            --color-blocked: var(--md-sys-color-error);
+            --color-broadcast: var(--md-sys-color-tertiary);
+            /* Strokes / shadows (RGDS featured stroke + elevation) */
+            --stroke-gradient: var(--md-custom-stroke-featured);
+            --brand-gradient: var(--md-custom-rainbow-gradient);
+            --shadow-panel: var(--md-sys-elevation-level4);
+            --shadow-card: var(--md-sys-elevation-level3);
+            --shadow-card-hover: var(--md-sys-elevation-level4);
+            --shadow-inset: inset 0 2px 10px color-mix(in srgb, var(--md-sys-color-on-surface) 8%, transparent);
+            --shadow-color: color-mix(in srgb, var(--md-sys-color-scrim, oklch(0% 0 0 / 0.48)) 60%, transparent);
+            --scrim-bg: var(--md-sys-color-scrim, oklch(0% 0 0 / 0.48));
+            /* Metrics (RGDS shape corners: 16/12/8) + board-domain sizes */
+            --radius-lg: var(--md-sys-shape-corner-large);
+            --radius-md: var(--md-sys-shape-corner-medium);
+            --radius-sm: var(--md-sys-shape-corner-small);
+            --icon-xl: 56px;
             --blur: blur(20px);
+            /* Legacy NFA-panel aliases — values now flow from RGDS. */
+            --nfa-action-primary: var(--md-sys-color-primary);
+            --nfa-text-onPrimary: var(--md-sys-color-on-primary);
+            --nfa-text-primary: var(--text-primary);
+            --nfa-text-secondary: var(--text-secondary);
+            --nfa-text-tertiary: var(--text-tertiary);
+            --nfa-surface-card: var(--md-sys-color-surface-container);
+            --nfa-surface-elevated: var(--md-sys-color-surface-container-high);
+            --nfa-surface-canvas: var(--md-sys-color-surface);
+            --nfa-surface-navSelected: var(--md-rgds-state-selected-surface);
+            --nfa-surface-secondaryContainer: color-mix(in srgb, var(--md-sys-color-on-surface) 6%, transparent);
+            --nfa-border-card: var(--md-sys-color-outline-variant);
+            --nfa-border-default: var(--md-sys-color-outline-variant);
+            --nfa-border-divider: var(--md-sys-color-outline-variant);
+            --nfa-form-inputBackground: var(--field-bg);
+            --nfa-form-inputBorder: var(--border-color);
+            --nfa-form-inputFocusBorder: var(--md-sys-color-primary);
+            --nfa-form-inputFocusRing: color-mix(in srgb, var(--md-sys-color-primary) 30%, transparent);
+            --nfa-form-toggleDisabled: var(--chip-bg);
+            --nfa-form-toggleEnabled: var(--md-sys-color-primary);
+            --nfa-status-error: var(--md-sys-color-error);
+            --nfa-status-errorSurface: var(--md-sys-color-error-container);
+            --nfa-status-success: var(--md-sys-color-success);
+            --nfa-status-successSurface: var(--md-sys-color-success-container);
+            --nfa-status-warning: var(--md-sys-color-warning);
+            --nfa-status-warningSurface: var(--md-sys-color-warning-container);
+            --nfa-status-info: var(--md-sys-color-info);
+            --nfa-status-infoSurface: var(--md-sys-color-info-container);
+            --nfa-radius-chip: var(--md-sys-shape-corner-medium);
+            --nfa-radius-button: var(--md-sys-shape-corner-large);
+            --nfa-radius-card: var(--md-sys-shape-corner-extra-large);
+            --nfa-sizing-buttonMd: 36px;
+            --nfa-spacing-xxs: var(--md-sys-spacing-xs);
+            --nfa-spacing-xs: var(--md-sys-spacing-sm);
+            --nfa-spacing-sm: var(--md-sys-spacing-sm);
+            --nfa-spacing-md: var(--md-sys-spacing-md);
+            --nfa-spacing-xl: var(--md-sys-spacing-lg);
+            --nfa-spacing-cardGap: var(--md-sys-spacing-sm);
+            --nfa-spacing-cardVertical: var(--md-sys-spacing-md);
+            --nfa-spacing-cardHorizontal: var(--md-sys-spacing-md);
+            --nfa-typography-headlineLarge-size: var(--md-sys-typescale-headline-medium-size);
+            --nfa-typography-titleMedium-size: var(--md-sys-typescale-title-large-size);
+            --nfa-typography-titleMedium-weight: 600;
+            --nfa-typography-bodyLarge-size: var(--md-sys-typescale-body-large-size);
+            --nfa-typography-bodyMedium-size: var(--md-sys-typescale-body-medium-size);
+            --nfa-typography-bodySmall-size: 12px;
+            --nfa-typography-labelLarge-size: var(--md-sys-typescale-label-large-size);
+            --nfa-typography-labelLarge-weight: 700;
+            --nfa-typography-labelMedium-size: 11px;
+            --nfa-typography-labelMedium-weight: 600;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'Outfit', sans-serif;
+            font-family: var(--md-sys-typescale-font);
             background-color: var(--bg-color);
             color: var(--text-primary);
             min-height: 100vh;
             overflow-x: hidden;
         }
+
+        /* Live animated background - enabled per theme token (speakeasy) */
+        [data-live-bg="false"] .orb { opacity: 0; transition: opacity 0.6s ease; }
 
         /* Animated Ambient Background */
         .ambient-bg {
@@ -69,25 +154,54 @@
             bottom: -200px; right: -100px;
             animation-delay: -10s;
         }
-        
+
         @keyframes float {
             0% { transform: translate(0, 0) scale(1); }
             100% { transform: translate(120px, 80px) scale(1.1); }
         }
 
-        /* Glassmorphism Classes */
+        /* Glassmorphism Classes - stroke color comes from the theme's
+           stroke-gradient token (yellow strokes / rainbow strokes / neutral). */
         .glass-panel {
-            background: var(--surface-color);
+            background:
+                linear-gradient(var(--surface-color), var(--surface-color)) padding-box,
+                var(--stroke-gradient) border-box;
             backdrop-filter: var(--blur);
             -webkit-backdrop-filter: var(--blur);
-            border: 1px solid var(--border-color);
+            border: 1.5px solid transparent;
             border-radius: var(--radius-lg);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+            box-shadow: var(--shadow-panel);
             transition: all 0.3s ease;
         }
 
         .glass-panel:hover {
-            border-color: var(--border-hover);
+            box-shadow: var(--shadow-card-hover);
+        }
+
+        /* Theme picker */
+        .theme-picker { margin-top: 24px; }
+        .theme-picker label {
+            display: block;
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 600;
+        }
+        .theme-swatches { display: flex; gap: 10px; flex-wrap: wrap; }
+        .theme-swatch {
+            width: 34px; height: 34px;
+            border-radius: 50%;
+            border: 2px solid var(--border-color);
+            cursor: pointer;
+            padding: 0;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+        }
+        .theme-swatch:hover { transform: scale(1.12); }
+        .theme-swatch.active {
+            border-color: var(--text-primary);
+            box-shadow: 0 0 0 3px var(--accent-glow);
         }
 
         /* Layout */
@@ -103,7 +217,12 @@
             display: flex;
             flex-direction: column;
             border-right: 1px solid var(--border-color);
-            background: rgba(10, 10, 10, 0.5);
+            border-top: none;
+            border-bottom: none;
+            border-left: none;
+            border-radius: 0;
+            box-shadow: 2px 0 20px var(--shadow-color);
+            background: var(--sidebar-bg);
             backdrop-filter: var(--blur);
             z-index: 10;
         }
@@ -116,7 +235,7 @@
             font-weight: 700;
             letter-spacing: -0.02em;
             margin-bottom: 48px;
-            background: linear-gradient(135deg, #fff, #a5b4fc);
+            background: var(--brand-gradient);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -138,7 +257,7 @@
         .custom-select {
             width: 100%;
             padding: 14px 16px;
-            background: rgba(255, 255, 255, 0.05);
+            background: var(--field-bg);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-sm);
             color: var(--text-primary);
@@ -149,11 +268,11 @@
             outline: none;
             transition: all 0.2s ease;
         }
-        .custom-select:hover { border-color: var(--border-hover); background: rgba(255, 255, 255, 0.08); }
+        .custom-select:hover { border-color: var(--border-hover); background: var(--raise-bg-hover); }
         .custom-select:focus { border-color: var(--color-progress); box-shadow: 0 0 0 2px var(--accent-glow); }
         .custom-select option {
-            background-color: #111111;
-            color: #ffffff;
+            background-color: var(--surface-solid);
+            color: var(--text-primary);
             padding: 12px;
         }
 
@@ -162,7 +281,7 @@
             align-items: center;
             gap: 12px;
             padding: 16px;
-            background: rgba(0,0,0,0.3);
+            background: var(--sink-bg);
             border-radius: var(--radius-sm);
             margin-top: 24px;
             border: 1px solid var(--border-color);
@@ -222,7 +341,7 @@
         .stat-card.completed { border-bottom: 3px solid var(--color-completed); }
         .stat-card.blocked { border-bottom: 3px solid var(--color-blocked); }
 
-        .stat-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(0,0,0,0.4); }
+        .stat-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-card-hover); }
         
         .stat-value { font-size: 48px; font-weight: 700; line-height: 1; margin-bottom: 12px; }
         .stat-label { font-size: 13px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; }
@@ -255,7 +374,7 @@
         
         .panel-title { font-size: 18px; font-weight: 600; }
         .badge {
-            background: rgba(255, 255, 255, 0.1);
+            background: var(--chip-bg);
             padding: 6px 12px;
             border-radius: 20px;
             font-size: 13px;
@@ -276,7 +395,7 @@
         }
         
         .member-card {
-            background: rgba(255, 255, 255, 0.03);
+            background: var(--raise-bg);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-md);
             padding: 20px;
@@ -284,15 +403,15 @@
             position: relative;
             overflow: hidden;
         }
-        .member-card:hover { background: rgba(255, 255, 255, 0.06); transform: scale(1.01); border-color: rgba(255,255,255,0.2); }
+        .member-card:hover { background: var(--raise-bg-hover); transform: scale(1.01); border-color: var(--border-hover); }
         .member-name { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
-        .member-role { font-size: 14px; color: var(--color-progress); margin-bottom: 16px; display: inline-block; background: rgba(59,130,246,0.1); padding: 4px 10px; border-radius: 6px;}
-        .member-inbox { 
+        .member-role { font-size: 14px; color: var(--color-progress); margin-bottom: 16px; display: inline-block; background: color-mix(in srgb, var(--color-progress) 12%, transparent); padding: 4px 10px; border-radius: 6px;}
+        .member-inbox {
             display: inline-flex; align-items: center; gap: 8px;
-            font-size: 13px; font-weight: 500; 
-            padding: 6px 12px; border-radius: 12px; background: rgba(255,255,255,0.05); color: var(--text-secondary);
+            font-size: 13px; font-weight: 500;
+            padding: 6px 12px; border-radius: 12px; background: var(--field-bg); color: var(--text-secondary);
         }
-        .member-inbox.has-msgs { background: rgba(239, 68, 68, 0.15); color: var(--red); box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);}
+        .member-inbox.has-msgs { background: color-mix(in srgb, var(--color-blocked) 15%, transparent); color: var(--color-blocked); box-shadow: 0 0 10px color-mix(in srgb, var(--color-blocked) 20%, transparent);}
 
         /* Message Stream */
         .msg-list { display: flex; flex-direction: column; gap: 16px; }
@@ -300,11 +419,11 @@
         .msg-item {
             padding: 20px;
             border-radius: var(--radius-md);
-            background: rgba(0, 0, 0, 0.4);
+            background: var(--sink-bg);
             border: 1px solid var(--border-color);
             animation: slideIn 0.4s ease forwards;
         }
-        
+
         @keyframes slideIn {
             from { opacity: 0; transform: translateX(-10px); }
             to { opacity: 1; transform: translateX(0); }
@@ -315,9 +434,9 @@
             font-size: 14px; margin-bottom: 12px;
         }
         .msg-tag { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
-        .msg-tag-event { background: rgba(255,255,255,0.1); color: var(--text-secondary); }
-        .msg-tag-message { background: rgba(59, 130, 246, 0.2); color: var(--color-progress); }
-        .msg-tag-broadcast { background: rgba(168, 85, 247, 0.2); color: var(--color-broadcast); }
+        .msg-tag-event { background: var(--chip-bg); color: var(--text-secondary); }
+        .msg-tag-message { background: color-mix(in srgb, var(--color-progress) 20%, transparent); color: var(--color-progress); }
+        .msg-tag-broadcast { background: color-mix(in srgb, var(--color-broadcast) 20%, transparent); color: var(--color-broadcast); }
 
         .msg-time { color: var(--text-tertiary); margin-left: auto; font-size: 13px; }
         .msg-flow { display: flex; align-items: center; gap: 10px; color: var(--text-secondary); }
@@ -326,9 +445,9 @@
         
         .msg-content {
             font-size: 15px; color: var(--text-secondary); line-height: 1.6;
-            background: rgba(255,255,255,0.02); padding: 16px; border-radius: var(--radius-sm);
+            background: var(--sink2-bg); padding: 16px; border-radius: var(--radius-sm);
             white-space: pre-wrap; word-break: break-word; font-family: 'SF Mono', Consolas, monospace;
-            border: 1px solid rgba(255,255,255,0.03);
+            border: 1px solid var(--border-color);
         }
 
         /* Kanban Board */
@@ -339,12 +458,14 @@
         }
 
         .kanban-col {
-            background: rgba(15, 15, 15, 0.6);
+            background:
+                linear-gradient(color-mix(in srgb, var(--md-sys-color-surface-container) 80%, var(--md-sys-color-surface)), color-mix(in srgb, var(--md-sys-color-surface-container) 80%, var(--md-sys-color-surface))) padding-box,
+                var(--stroke-gradient) border-box;
+            border: 1px solid transparent;
             border-radius: var(--radius-md);
-            border: 1px solid var(--border-color);
             display: flex; flex-direction: column;
             min-height: 400px;
-            box-shadow: inset 0 2px 10px rgba(0,0,0,0.2);
+            box-shadow: var(--shadow-inset);
         }
 
         .k-head {
@@ -352,7 +473,7 @@
             font-size: 15px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em;
             display: flex; justify-content: space-between; align-items: center;
             border-bottom: 1px solid var(--border-color);
-            background: rgba(0,0,0,0.2);
+            background: var(--col-head-bg);
         }
         
         .k-head-pending { border-top: 3px solid var(--color-pending); color: var(--color-pending); border-radius: var(--radius-md) var(--radius-md) 0 0;}
@@ -363,18 +484,103 @@
         .k-body { padding: 16px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto;}
 
         .task-card {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border-color);
+            background:
+                linear-gradient(var(--md-sys-color-surface), var(--md-sys-color-surface)) padding-box,
+                var(--stroke-gradient) border-box;
+            border: 1px solid transparent;
             border-radius: var(--radius-sm);
             padding: 16px;
             transition: all 0.2s;
             position: relative;
         }
-        .task-card:hover { 
-            background: rgba(255, 255, 255, 0.09); 
-            transform: translateY(-2px); 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            border-color: rgba(255,255,255,0.2);
+        .task-card:hover {
+            background:
+                linear-gradient(var(--md-sys-color-surface-container), var(--md-sys-color-surface-container)) padding-box,
+                var(--stroke-gradient) border-box;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-card);
+        }
+
+        /* Featured box — RGDS featured-surface treatment (domain composition).
+           Solid white (on-surface) stroke; a rotating, pulsating rainbow ARC
+           rides on top of it, masked to the 2px ring so the box interior is
+           never filled with rainbow. Animated only in the rainbow-enabled
+           theme (RGDS: featured surfaces are theme-4 only). */
+        @property --rgds-featured-angle { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+        .rgds-featured {
+            border: 2px solid var(--md-sys-color-on-surface);
+        }
+        .rgds-featured::before {
+            content: "";
+            position: absolute;
+            inset: -2px;
+            border-radius: inherit;
+            padding: 2px;
+            background: conic-gradient(from var(--rgds-featured-angle, 0deg),
+                transparent 0deg, transparent 288deg,
+                var(--md-sys-color-tertiary) 306deg,
+                var(--md-custom-icon-a) 320deg,
+                var(--md-custom-icon-b) 334deg,
+                var(--md-custom-icon-c) 348deg,
+                transparent 360deg);
+            -webkit-mask: linear-gradient(var(--md-sys-color-on-primary) 0 0) content-box, linear-gradient(var(--md-sys-color-on-primary) 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+            z-index: 3;
+        }
+        @keyframes rgds-featured-rotate { to { --rgds-featured-angle: 360deg; } }
+        @keyframes rgds-featured-pulse { 0%, 100% { opacity: 0.8; } 50% { opacity: 1; } }
+        :root[data-theme="secondary-dark"] .rgds-featured::before {
+            animation:
+                rgds-featured-rotate calc(var(--md-ref-motion-custom-pulse-duration) * 1.5) linear infinite,
+                rgds-featured-pulse var(--md-ref-motion-custom-pulse-duration) ease-in-out infinite;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .rgds-featured::before { animation: none !important; }
+        }
+
+        /* Dynamic stroke law (global): stroke colors rest slightly faded and
+           brighten toward the pointer, per RGDS state/motion tokens. Rainbow
+           and featured gradients are STROKE-ONLY — box interiors never take a
+           rainbow fill (all border-box stroke layers sit under opaque
+           padding-box fills). */
+        .kanban-col, .tools-card { position: relative; }
+        .task-card, .kanban-col, .action-btn, .tools-card {
+            filter: saturate(0.8);
+            transition: filter var(--md-sys-motion-duration-medium) var(--md-sys-motion-easing-emphasized);
+        }
+        .task-card:hover, .kanban-col:hover, .action-btn:hover, .tools-card:hover {
+            filter: saturate(var(--md-rgds-state-hover-chroma, 1.12));
+        }
+        .task-card::after, .kanban-col::after, .action-btn::after, .tools-card::after {
+            content: "";
+            position: absolute;
+            inset: -1.5px;
+            border-radius: inherit;
+            padding: 1.5px;
+            background: var(--stroke-gradient);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 2;
+            transition: opacity var(--md-sys-motion-duration-medium) var(--md-sys-motion-easing-emphasized);
+            -webkit-mask:
+                linear-gradient(var(--md-sys-color-on-primary) 0 0) content-box,
+                linear-gradient(var(--md-sys-color-on-primary) 0 0),
+                radial-gradient(17em at var(--px, -99em) var(--py, -99em), var(--md-sys-color-on-primary), transparent 72%);
+            -webkit-mask-composite: xor, source-in;
+            mask:
+                linear-gradient(var(--md-sys-color-on-primary) 0 0) content-box,
+                linear-gradient(var(--md-sys-color-on-primary) 0 0),
+                radial-gradient(17em at var(--px, -99em) var(--py, -99em), var(--md-sys-color-on-primary), transparent 72%);
+            mask-composite: exclude, intersect;
+        }
+        .task-card:hover::after, .kanban-col:hover::after, .action-btn:hover::after, .tools-card:hover::after {
+            opacity: 1;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .task-card, .kanban-col, .action-btn, .tools-card { transition: none; }
+            .task-card::after, .kanban-col::after, .action-btn::after, .tools-card::after { transition: none; }
         }
         .task-id { font-size: 12px; font-family: 'SF Mono', Consolas, monospace; color: var(--text-tertiary); margin-bottom: 8px; }
         .task-subj { font-size: 15px; font-weight: 500; line-height: 1.5; color: var(--text-primary); }
@@ -382,27 +588,303 @@
         .task-own::before { content: ''; display:inline-block; width:8px; height:8px; border-radius:50%; background: var(--color-progress); }
         .task-card.blocked-card .task-own::before { background: var(--color-blocked); }
         
-        .blocked-label { color:var(--color-blocked); font-size:12px; margin-top:10px; background: rgba(239,68,68,0.1); padding:4px 8px; border-radius:4px; display: inline-block;}
+        .blocked-label { color:var(--color-blocked); font-size:var(--nfa-typography-bodySmall-size, 12px); margin-top:var(--nfa-spacing-sm, 10px); background: color-mix(in srgb, var(--color-blocked) 10%, transparent); padding:var(--nfa-spacing-xxs, 4px) var(--nfa-spacing-sm, 10px); border-radius:var(--nfa-radius-chip, 13px); display: inline-block;}
 
         .empty-state { text-align: center; padding: 60px 20px; color: var(--text-tertiary); }
-        .empty-icon { opacity: 0.5; margin-bottom: 20px; }
+        .empty-icon { opacity: 0.5; margin-bottom: 20px; width: var(--icon-xl); height: var(--icon-xl); }
         .empty-title { font-size: 28px; font-weight: 600; color: var(--text-primary); margin-bottom: 16px; letter-spacing: -0.01em;}
 
         /* Modal Styles */
-        .action-btn { background: rgba(59, 130, 246, 0.2); border: 1px solid var(--color-progress); color: var(--color-progress); padding: 10px 20px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; font-family: inherit; }
-        .action-btn:hover { background: rgba(59, 130, 246, 0.4); box-shadow: 0 0 15px rgba(59, 130, 246, 0.3); }
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 100; display: none; align-items: center; justify-content: center; }
-        .modal-content { background: var(--surface-color); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 32px; width: 400px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .action-btn {
+            background:
+                linear-gradient(color-mix(in srgb, var(--color-progress) 18%, var(--md-sys-color-surface-container)), color-mix(in srgb, var(--color-progress) 18%, var(--md-sys-color-surface-container))) padding-box,
+                var(--stroke-gradient) border-box;
+            border: 1.5px solid transparent;
+            position: relative;
+            color: var(--color-progress); padding: 10px 20px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; font-family: inherit;
+        }
+        .action-btn:hover { box-shadow: 0 0 15px color-mix(in srgb, var(--color-progress) 30%, transparent); filter: brightness(1.1) saturate(var(--md-rgds-state-hover-chroma, 1.12)); }
+        .action-btn-broadcast {
+            background:
+                linear-gradient(color-mix(in srgb, var(--color-broadcast) 20%, var(--md-sys-color-surface-container)), color-mix(in srgb, var(--color-broadcast) 20%, var(--md-sys-color-surface-container))) padding-box,
+                var(--stroke-gradient) border-box;
+            color: var(--color-broadcast);
+        }
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--scrim-bg); backdrop-filter: blur(5px); z-index: 100; display: none; align-items: center; justify-content: center; }
+        .modal-content { background:
+                linear-gradient(var(--md-sys-color-surface), var(--md-sys-color-surface)) padding-box,
+                var(--stroke-gradient) border-box;
+            border: 1.5px solid transparent; border-radius: var(--radius-lg); padding: 32px; width: 400px; box-shadow: var(--shadow-panel); }
         .modal-content h3 { font-size: 20px; font-weight: 600; margin-bottom: 24px; }
-        .modal-input { width: 100%; padding: 12px; margin-bottom: 16px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: white; font-family: inherit; font-size: 14px; }
+        .modal-input { width: 100%; padding: 12px; margin-bottom: 16px; background: var(--field-bg); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); font-family: inherit; font-size: 14px; }
         .modal-input:focus { border-color: var(--color-progress); outline: none; }
         .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 8px; }
         .btn-cancel { background: transparent; border: 1px solid var(--border-color); color: var(--text-secondary); padding: 10px 20px; border-radius: var(--radius-sm); cursor: pointer; transition: 0.2s;}
-        .btn-cancel:hover { background: rgba(255,255,255,0.1); color: white; }
+        .btn-cancel:hover { background: var(--chip-bg); color: var(--text-primary); }
+
+        /* View navigation (Board / Tools) */
+        .view-nav { display: flex; gap: 8px; margin: 18px 0 0; }
+        .nav-btn { flex: 1; padding: 9px 12px; background: var(--raise-bg); color: var(--text-secondary);
+            border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer;
+            font-family: inherit; font-size: 13px; font-weight: 500; transition: 0.2s; }
+        .nav-btn:hover { background: var(--raise-bg-hover); color: var(--text-primary); }
+        .nav-btn-active { background: var(--surface-active); color: var(--text-primary); border-color: var(--border-hover); }
+
+        /* Tools panel */
+        .tools-view { padding-bottom: 40px; }
+        .tools-head h2 { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+        .tools-head p { color: var(--text-secondary); font-size: 13px; margin-bottom: 20px; }
+        .tools-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+        .tools-card { background:
+                linear-gradient(var(--surface-color), var(--surface-color)) padding-box,
+                var(--stroke-gradient) border-box;
+            border: 1.5px solid transparent; border-radius: var(--radius-lg); padding: 22px;
+            box-shadow: var(--shadow-card); }
+        .tools-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 14px; color: var(--text-primary); }
+        .tools-card.tools-card-wide { grid-column: 1 / -1; }
+        .tools-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; max-height: 320px; overflow-y: auto; }
+        .tools-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+            background: var(--sink-bg); border: 1px solid var(--border-color); border-radius: var(--radius-sm); }
+        .tools-item-meta { flex: 1; min-width: 0; }
+        .tools-item-name { font-size: 13px; font-weight: 600; color: var(--text-primary); word-break: break-all; }
+        .tools-item-sub { font-size: 11.5px; color: var(--text-tertiary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .tools-item-badge { font-size: 10px; padding: 2px 7px; border-radius: 8px; background: var(--chip-bg);
+            color: var(--text-secondary); border: 1px solid var(--border-color); white-space: nowrap; }
+        .tools-item-actions { display: flex; gap: 6px; }
+        .tools-mini-btn { padding: 5px 10px; font-size: 11px; background: var(--raise-bg);
+            border: 1px solid var(--border-color); color: var(--text-secondary); border-radius: var(--radius-sm);
+            cursor: pointer; font-family: inherit; transition: 0.2s; }
+        .tools-mini-btn:hover { background: var(--raise-bg-hover); color: var(--text-primary); }
+        .tools-mini-danger:hover { color: var(--color-blocked); border-color: var(--color-blocked); }
+        .tools-form { border-top: 1px solid var(--border-color); padding-top: 14px; }
+        .tools-form .modal-input { margin-bottom: 10px; }
+        .tools-actions { display: flex; gap: 10px; }
+        .tools-hint { font-size: 11.5px; color: var(--text-tertiary); margin-top: 10px; }
+        .tools-status-ok { color: var(--color-completed); }
+        .tools-status-bad { color: var(--color-blocked); }
+        .tools-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; display: block; }
+        .autorouter-role { display: flex; gap: 10px; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--border-color); }
+        .autorouter-role:last-child { border-bottom: none; }
+        .autorouter-role-meta { flex: 1; min-width: 0; }
+        .autorouter-role-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+        .autorouter-role-doc { font-size: 11px; color: var(--text-tertiary); }
+        .autorouter-role input { width: 38%; padding: 8px; background: var(--field-bg); border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm); color: var(--text-primary); font-family: inherit; font-size: 12px; }
+        .tools-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+        .tools-table th { text-align: left; padding: 8px 10px; color: var(--text-secondary); font-weight: 500;
+            border-bottom: 1px solid var(--border-hover); font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; }
+        .tools-table td { padding: 8px 10px; border-bottom: 1px solid var(--border-color); color: var(--text-primary); }
+        .tools-table tr:hover td { background: var(--raise-bg); }
+        .tools-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+        .key-stat { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--border-color); font-size: 13px; }
+        .key-stat:last-child { border-bottom: none; }
+        .key-stat .k { color: var(--text-secondary); }
+        .key-stat .v { color: var(--text-primary); font-variant-numeric: tabular-nums; }
+
+        /* ===== Multimedia Suite — NFA semantic components (tokens only) ===== */
+        .nfa-tabs { display: flex; align-items: center; gap: var(--nfa-spacing-xs, 6px); margin-bottom: var(--nfa-spacing-xs, 6px); }
+        .nfa-nav-item { padding: var(--nfa-spacing-sm, 10px) var(--nfa-spacing-md, 16px);
+            background: transparent; color: var(--nfa-text-secondary, var(--text-secondary));
+            border: none; border-radius: var(--nfa-radius-chip, 13px); cursor: pointer;
+            font-family: inherit; font-size: var(--nfa-typography-labelLarge-size, 14px); font-weight: var(--nfa-typography-labelLarge-weight, 700);
+            transition: color .2s, background .2s; }
+        .nfa-nav-item:hover { color: var(--nfa-text-primary, var(--text-primary)); }
+        .nfa-nav-item.active { background: var(--nfa-surface-navSelected, var(--surface-active)); color: var(--nfa-text-primary, var(--text-primary)); }
+        .nfa-spacer { flex: 1; }
+        .nfa-divider { height: 1px; background: var(--nfa-border-divider, var(--border-color));
+            margin: var(--nfa-spacing-xs, 6px) 0 var(--nfa-spacing-md, 16px); }
+        .nfa-surface { background: var(--nfa-surface-card, var(--surface-color));
+            border: 1px solid var(--nfa-border-card, var(--border-color));
+            border-radius: var(--nfa-radius-card, 24px);
+            padding: var(--nfa-spacing-cardVertical, 14px) var(--nfa-spacing-cardHorizontal, 18px);
+            box-shadow: var(--md-sys-elevation-level3); }
+        .nfa-title { font-size: var(--nfa-typography-titleMedium-size, 18px); font-weight: var(--nfa-typography-titleMedium-weight, 600);
+            color: var(--nfa-text-primary, var(--text-primary)); margin-bottom: var(--nfa-spacing-sm, 10px); }
+        .nfa-label { display: block; font-size: var(--nfa-typography-labelMedium-size, 11px);
+            font-weight: var(--nfa-typography-labelMedium-weight, 600); color: var(--nfa-text-secondary, var(--text-secondary));
+            margin: var(--nfa-spacing-sm, 10px) 0 var(--nfa-spacing-xxs, 4px); text-transform: uppercase; letter-spacing: .5px; }
+        .nfa-input { width: 100%; padding: var(--nfa-spacing-sm, 10px) var(--nfa-spacing-md, 16px);
+            background: var(--nfa-form-inputBackground, var(--field-bg));
+            border: 1px solid var(--nfa-form-inputBorder, var(--border-color));
+            border-radius: var(--nfa-radius-chip, 13px);
+            color: var(--nfa-text-primary, var(--text-primary)); font-family: inherit;
+            font-size: var(--nfa-typography-bodyMedium-size, 15px); }
+        .nfa-input:focus { border-color: var(--nfa-form-inputFocusBorder, var(--nfa-action-primary));
+            outline: none; box-shadow: 0 0 0 2px var(--nfa-form-inputFocusRing, transparent); }
+        .nfa-kindrow { display: flex; flex-wrap: wrap; gap: var(--nfa-spacing-xxs, 4px); }
+        .nfa-kind { padding: var(--nfa-spacing-xxs, 4px) var(--nfa-spacing-sm, 10px);
+            border-radius: var(--nfa-radius-chip, 13px); border: 1px solid var(--nfa-border-default, var(--border-color));
+            background: transparent; color: var(--nfa-text-secondary, var(--text-secondary)); cursor: pointer;
+            font-family: inherit; font-size: var(--nfa-typography-labelMedium-size, 11px); font-weight: var(--nfa-typography-labelMedium-weight, 600); }
+        .nfa-kind.active { background: var(--nfa-action-primary); color: var(--nfa-text-onPrimary, var(--text-primary)); border-color: transparent; }
+        .nfa-kind:disabled { opacity: .45; cursor: not-allowed; }
+        .nfa-paramrow { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--nfa-spacing-sm, 10px); }
+        .nfa-estimateline { margin: var(--nfa-spacing-md, 16px) 0; padding: var(--nfa-spacing-sm, 10px) var(--nfa-spacing-md, 16px);
+            background: var(--nfa-surface-secondaryContainer, var(--sink-bg));
+            border-radius: var(--nfa-radius-chip, 13px);
+            font-size: var(--nfa-typography-bodySmall-size, 12px); color: var(--nfa-text-secondary, var(--text-secondary)); }
+        .nfa-actions { display: flex; gap: var(--nfa-spacing-sm, 10px); }
+        .nfa-btn { padding: var(--nfa-spacing-sm, 10px) var(--nfa-spacing-xl, 24px);
+            border-radius: var(--nfa-radius-button, 18px); border: none; cursor: pointer; font-family: inherit;
+            font-size: var(--nfa-typography-labelLarge-size, 14px); font-weight: var(--nfa-typography-labelLarge-weight, 700);
+            min-height: var(--nfa-sizing-buttonMd, 36px); transition: filter .2s; }
+        .nfa-btn-primary { background: var(--nfa-action-primary); color: var(--nfa-text-onPrimary, var(--text-primary)); }
+        .nfa-btn-primary:hover { filter: brightness(1.1); }
+        .nfa-btn-secondary { background: transparent; color: var(--nfa-text-primary, var(--text-primary));
+            border: 1px solid var(--nfa-border-default, var(--border-color)); }
+        .nfa-btn:disabled { opacity: .5; cursor: not-allowed; }
+        .nfa-badge { display: inline-block; padding: var(--nfa-spacing-xxs, 4px) var(--nfa-spacing-sm, 10px);
+            border-radius: var(--nfa-radius-chip, 13px); font-size: var(--nfa-typography-labelMedium-size, 11px);
+            font-weight: var(--nfa-typography-labelMedium-weight, 600);
+            background: var(--nfa-status-infoSurface, var(--chip-bg)); color: var(--nfa-status-info, var(--text-secondary)); }
+        .nfa-badge.ok { background: var(--nfa-status-successSurface, var(--chip-bg)); color: var(--nfa-status-success, var(--color-completed)); }
+        .nfa-badge.warn { background: var(--nfa-status-warningSurface, var(--chip-bg)); color: var(--nfa-status-warning, var(--color-pending)); }
+        .nfa-badge.bad { background: var(--nfa-status-errorSurface, var(--chip-bg)); color: var(--nfa-status-error, var(--color-blocked)); }
+        .nfa-toggle { cursor: pointer; font-size: var(--nfa-typography-labelMedium-size, 11px);
+            color: var(--nfa-text-secondary, var(--text-secondary));
+            background: var(--nfa-form-toggleDisabled, var(--chip-bg));
+            padding: var(--nfa-spacing-xxs, 4px) var(--nfa-spacing-sm, 10px); border-radius: var(--nfa-radius-chip, 13px); user-select: none; }
+        .nfa-toggle.on { background: var(--nfa-form-toggleEnabled, var(--nfa-action-primary)); color: var(--nfa-text-onPrimary, var(--text-primary)); }
+        .nfa-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--nfa-spacing-md, 16px); }
+        .nfa-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: var(--nfa-spacing-cardGap, 12px); }
+        .nfa-cell { background: var(--nfa-surface-elevated, var(--surface-color));
+            border: 1px solid var(--nfa-border-card, var(--border-color));
+            border-radius: var(--nfa-radius-chip, 13px); overflow: hidden;
+            display: flex; flex-direction: column; }
+        .nfa-cell img, .nfa-cell video { width: 100%; aspect-ratio: 1; object-fit: cover; background: var(--nfa-surface-canvas, var(--bg-color)); }
+        .nfa-cell-meta { padding: var(--nfa-spacing-xxs, 4px) var(--nfa-spacing-sm, 10px);
+            font-size: var(--nfa-typography-labelMedium-size, 11px); color: var(--nfa-text-secondary, var(--text-secondary));
+            display: flex; align-items: center; justify-content: space-between; gap: var(--nfa-spacing-xxs, 4px); }
+        .nfa-cell-actions { display: flex; gap: var(--nfa-spacing-xxs, 4px); }
+        .nfa-mini { padding: var(--nfa-spacing-xxs, 4px) var(--nfa-spacing-sm, 10px);
+            border-radius: var(--nfa-radius-chip, 13px); border: 1px solid var(--nfa-border-default, var(--border-color));
+            background: transparent; color: var(--nfa-text-secondary, var(--text-secondary)); cursor: pointer;
+            font-family: inherit; font-size: var(--nfa-typography-labelMedium-size, 11px); }
+        .nfa-mini:hover { color: var(--nfa-text-primary, var(--text-primary)); border-color: var(--nfa-border-default, var(--border-hover)); }
+        .nfa-latest { min-height: 220px; display: flex; align-items: center; justify-content: center;
+            border-radius: var(--nfa-radius-chip, 13px); overflow: hidden;
+            background: var(--nfa-surface-canvas, var(--bg-color)); border: 1px solid var(--nfa-border-card, var(--border-color)); }
+        .nfa-latest img, .nfa-latest video { max-width: 100%; max-height: 420px; }
+        .nfa-muted { color: var(--nfa-text-tertiary, var(--text-tertiary)); font-size: var(--nfa-typography-bodySmall-size, 12px); }
+        .nfa-presetrow { display: flex; flex-wrap: wrap; gap: var(--nfa-spacing-xxs, 4px); }
 
     </style>
 </head>
 <body>
+
+    <script>
+    // Theme engine — RGDS-native. Switching sets :root[data-theme], which drives
+    // the vendored RGDS tokens.css (static/rgds/). /api/theme supplies only the
+    // board domain layer (mode labels, featured-stroke refs, domain sizes).
+    // No colors are hardcoded here; every value resolves from RGDS.
+    (function () {
+        const THEME_KEY = 'rgds-theme';           // RGDS convention (applyRgdsTheme)
+        const LEGACY_KEY = 'clawteam-theme-mode'; // pre-RGDS board key
+        let THEME = { default: '', modes: {}, domain: { shape: {}, typography: {} }, legacyModeMap: {} };
+
+        const kebab = (s) => s.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+
+        function applyThemeMode(id) {
+            const mode = THEME.modes[id];
+            if (!mode) return;
+            const root = document.documentElement;
+            root.dataset.theme = id; // RGDS token switch
+            root.dataset.mode = id;  // board compat
+            const tokens = mode.tokens || {};
+            for (const [token, value] of Object.entries(tokens)) {
+                if (typeof value === 'string') root.style.setProperty('--' + kebab(token), value);
+            }
+            const domain = THEME.domain || {};
+            for (const [name, value] of Object.entries(domain.shape || {})) {
+                root.style.setProperty('--' + kebab(name), String(value));
+            }
+            for (const [name, spec] of Object.entries(domain.typography || {})) {
+                if (typeof spec !== 'object' || spec === null) continue;
+                if ('size' in spec) root.style.setProperty(`--nfa-typography-${name}-size`, String(spec.size));
+                if ('weight' in spec) root.style.setProperty(`--nfa-typography-${name}-weight`, String(spec.weight));
+            }
+            root.dataset.liveBg = mode.liveBackground ? 'true' : 'false';
+            root.style.colorScheme = mode.appearance || 'dark';
+            try {
+                localStorage.setItem(THEME_KEY, id);
+                localStorage.setItem(LEGACY_KEY, id);
+            } catch (e) { /* private mode */ }
+            document.querySelectorAll('.theme-swatch').forEach((btn) => {
+                btn.classList.toggle('active', btn.dataset.mode === id);
+            });
+        }
+
+        function renderThemePicker() {
+            const wrap = document.getElementById('theme-swatches');
+            if (!wrap) return;
+            wrap.replaceChildren();
+            Object.entries(THEME.modes || {}).forEach(([id, mode]) => {
+                const btn = document.createElement('button');
+                btn.className = 'theme-swatch';
+                btn.dataset.mode = id;
+                btn.title = mode.label || id;
+                btn.setAttribute('aria-label', mode.label || id);
+                // Neutral RGDS-derived preview: exact per-theme colors are not
+                // addressable outside that theme's data-theme scope.
+                btn.style.background = 'var(--md-sys-color-surface-container-highest)';
+                btn.style.borderColor = 'var(--md-sys-color-outline-variant)';
+                btn.addEventListener('click', () => applyThemeMode(id));
+                wrap.appendChild(btn);
+            });
+        }
+
+        function storedMode() {
+            let id = '';
+            try { id = localStorage.getItem(THEME_KEY) || ''; } catch (e) { /* ignore */ }
+            if (THEME.modes[id]) return id;
+            let legacy = '';
+            try { legacy = localStorage.getItem(LEGACY_KEY) || ''; } catch (e) { /* ignore */ }
+            const mapped = (THEME.legacyModeMap || {})[legacy] || legacy;
+            return THEME.modes[mapped] ? mapped : '';
+        }
+
+        async function initTheme() {
+            try {
+                const res = await fetch('/api/theme');
+                const data = await res.json();
+                if (data && typeof data === 'object') THEME = data;
+            } catch (e) { /* server without theme support - keep RGDS defaults */ }
+            if (!THEME.modes || Object.keys(THEME.modes).length === 0) {
+                document.documentElement.dataset.theme = 'secondary-dark';
+                document.documentElement.dataset.liveBg = 'true';
+                return;
+            }
+            renderThemePicker();
+            let modeId = storedMode();
+            if (!modeId) modeId = THEME.default || Object.keys(THEME.modes)[0];
+            applyThemeMode(modeId);
+        }
+
+        window.applyThemeMode = applyThemeMode;
+        initTheme();
+    })();
+
+    // Dynamic stroke: pointer-position feed for the stroke-brightening ring
+    // (see the dynamic stroke law in <style>). rAF-throttled, passive.
+    (function () {
+        const BOX = '.task-card, .kanban-col, .action-btn, .tools-card';
+        let raf = 0;
+        let lastEvent = null;
+        document.addEventListener('pointermove', (e) => {
+            lastEvent = e;
+            if (raf) return;
+            raf = requestAnimationFrame(() => {
+                raf = 0;
+                const target = lastEvent.target;
+                const el = target && target.closest ? target.closest(BOX) : null;
+                if (!el) return;
+                const rect = el.getBoundingClientRect();
+                el.style.setProperty('--px', (lastEvent.clientX - rect.left) + 'px');
+                el.style.setProperty('--py', (lastEvent.clientY - rect.top) + 'px');
+            });
+        }, { passive: true });
+    })();
+    </script>
 
     <div class="ambient-bg">
         <div class="orb orb-1"></div>
@@ -411,7 +893,7 @@
 
     <div class="app-layout">
         <!-- Sidebar -->
-        <aside class="sidebar glass-panel" style="border-radius: 0; box-shadow: 2px 0 20px rgba(0,0,0,0.5); border-top: none; border-bottom: none; border-left: none;">
+        <aside class="sidebar glass-panel">
             <div class="brand">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
@@ -428,9 +910,21 @@
                 </select>
             </div>
 
+            <nav class="view-nav">
+                <button id="nav-board" class="nav-btn nav-btn-active" onclick="switchView('board')">Board</button>
+                <button id="nav-tools" class="nav-btn" onclick="switchView('tools')">Tools</button>
+                <button id="nav-models" class="nav-btn" onclick="switchView('models')">Models</button>
+                <button id="nav-media" class="nav-btn" onclick="switchView('media')">Media</button>
+            </nav>
+
             <div class="connection-status">
                 <div class="status-dot" id="status-dot"></div>
                 <div class="status-text" id="status-text">Disconnected</div>
+            </div>
+
+            <div class="theme-picker">
+                <label>Theme</label>
+                <div class="theme-swatches" id="theme-swatches"></div>
             </div>
         </aside>
 
@@ -443,9 +937,236 @@
                     <line x1="12" y1="16" x2="12.01" y2="16"></line>
                 </svg>
                 <div class="empty-title">Welcome to ClawTeam Nexus</div>
-                <p style="font-size: 16px;">Select a highly-intelligent swarm to begin real-time monitoring.</p>
+                <p style="font-size: var(--nfa-typography-bodyLarge-size, 16px);">Select a highly-intelligent swarm to begin real-time monitoring.</p>
             </div>
         </main>
+
+        <!-- Tools View (MCP servers / Skills / Profiles) -->
+        <section class="main-content tools-view" id="tools-view" style="display:none;">
+            <div class="tools-head">
+                <h2>Tools</h2>
+                <p>MCP servers and skills apply to interactive sessions AND every spawned swarm agent (written to repo + worker configs together).</p>
+            </div>
+
+            <div class="tools-grid">
+                <div class="tools-card glass-panel">
+                    <h3>MCP Servers</h3>
+                    <div id="mcp-list" class="tools-list"></div>
+                    <div class="tools-form">
+                        <input type="text" id="mcp-name" class="modal-input" placeholder="name (lowercase-hyphen)" autocomplete="off">
+                        <select id="mcp-type" class="modal-input">
+                            <option value="http">http</option>
+                            <option value="stdio">stdio</option>
+                        </select>
+                        <input type="text" id="mcp-url" class="modal-input" placeholder="http://127.0.0.1:PORT/mcp (http)" autocomplete="off">
+                        <input type="text" id="mcp-cmd" class="modal-input" placeholder="command (stdio, e.g. npx)" autocomplete="off">
+                        <input type="text" id="mcp-args" class="modal-input" placeholder="args, comma-separated (stdio, e.g. -y,@playwright/mcp)" autocomplete="off">
+                        <div class="tools-actions">
+                            <button class="action-btn" onclick="addMcp(event)">Add Server</button>
+                        </div>
+                        <p class="tools-hint">Secrets: use ${ENV_VAR_NAME} in URLs/headers — values live in env, never here.</p>
+                    </div>
+                </div>
+
+                <div class="tools-card glass-panel">
+                    <h3>Skills</h3>
+                    <div id="skills-list" class="tools-list"></div>
+                    <div class="tools-form">
+                        <input type="text" id="skill-name" class="modal-input" placeholder="skill name (lowercase-hyphen)" autocomplete="off">
+                        <input type="text" id="skill-desc" class="modal-input" placeholder="one-line description" autocomplete="off">
+                        <textarea id="skill-content" class="modal-input" placeholder="SKILL.md body — instructions the agents will follow" rows="5" style="resize:vertical;"></textarea>
+                        <div class="tools-actions">
+                            <button class="action-btn" onclick="addSkill(event)">Install Skill</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tools-card glass-panel">
+                    <h3>Agent Profiles</h3>
+                    <div id="profiles-list" class="tools-list"></div>
+                    <p class="tools-hint">Default model routing for spawned agents. Change via: clawteam config set default_profile &lt;name&gt;</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Models View (OpenRouter: picker / autorouter / rankings / compare / cache) -->
+        <section class="main-content tools-view" id="models-view" style="display:none;">
+            <div class="tools-head">
+                <h2>Models · OpenRouter</h2>
+                <p>Provider and routing control for the swarm — changes apply to every spawned agent on its next spawn.</p>
+            </div>
+
+            <div class="tools-grid">
+                <div class="tools-card glass-panel">
+                    <h3>Provider &amp; Model</h3>
+                    <div class="tools-item" style="margin-bottom:12px;">
+                        <div class="tools-item-meta">
+                            <div class="tools-item-name">OpenRouter <span class="tools-item-badge">hardcoded</span></div>
+                            <div class="tools-item-sub">API key from env OPENROUTER_API_KEY · never stored in the app</div>
+                        </div>
+                    </div>
+                    <label class="tools-label">Primary model</label>
+                    <input type="text" id="model-pick" class="modal-input" list="model-catalog" placeholder="search or pick a model…" autocomplete="off">
+                    <datalist id="model-catalog"></datalist>
+                    <div class="tools-item-sub" id="model-pick-meta" style="margin-bottom:10px;">—</div>
+                    <div class="tools-actions">
+                        <button class="action-btn" onclick="setPrimaryModel(event)">Set as Primary</button>
+                    </div>
+                </div>
+
+                <div class="tools-card glass-panel">
+                    <h3>Autorouter</h3>
+                    <div id="autorouter-roles"></div>
+                    <div class="tools-actions" style="margin-top:10px;">
+                        <button class="action-btn" onclick="saveRouting(event)">Save &amp; Apply to Swarm</button>
+                    </div>
+                    <p class="tools-hint">Roles map to the swarm profile env (ANTHROPIC_MODEL / ANTHROPIC_SMALL_FAST_MODEL) + the routing table at ~\.clawteam\openrouter_routing.json.</p>
+                </div>
+
+                <div class="tools-card glass-panel tools-card-wide">
+                    <h3>Live Rankings <span class="tools-item-badge" id="rankings-updated"></span></h3>
+                    <div class="tools-actions" style="margin-bottom:10px;">
+                        <select id="rankings-dataset" class="modal-input" style="width:auto; margin-bottom:0;">
+                            <option value="tools">Tool-calling usage</option>
+                            <option value="images">Image generation usage</option>
+                        </select>
+                        <button class="tools-mini-btn" id="rankings-auto" onclick="toggleRankingsAuto()">Auto 30s: off</button>
+                        <button class="tools-mini-btn" onclick="loadRankings()">Refresh</button>
+                    </div>
+                    <table class="tools-table" id="rankings-table">
+                        <thead><tr><th>#</th><th>Model</th><th>Tokens 7d</th><th>$/M in</th><th>Context</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+
+                <div class="tools-card glass-panel tools-card-wide">
+                    <h3>Compare Models</h3>
+                    <div class="tools-actions" style="margin-bottom:10px;">
+                        <input type="text" id="compare-pick" class="modal-input" list="model-catalog" placeholder="add model to comparison…" style="margin-bottom:0;" autocomplete="off">
+                        <button class="tools-mini-btn" onclick="addCompare()">Add</button>
+                        <button class="tools-mini-btn" onclick="clearCompare()">Clear</button>
+                    </div>
+                    <table class="tools-table" id="compare-table">
+                        <thead><tr><th>Model</th><th>Context</th><th>$/M in</th><th>$/M out</th><th>$/M cached</th><th>Cache discount</th><th>Modality</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+
+                <div class="tools-card glass-panel">
+                    <h3>Key &amp; Spend</h3>
+                    <div id="key-stats"></div>
+                </div>
+
+                <div class="tools-card glass-panel">
+                    <h3>Cache Optimizer</h3>
+                    <div class="tools-form" style="border-top:none; padding-top:0;">
+                        <label class="tools-label">Cache lab — same prompt twice, measure the cache hit</label>
+                        <textarea id="cache-prompt" class="modal-input" rows="3" placeholder="Paste a representative system prompt or task text…" style="resize:vertical;"></textarea>
+                        <div class="tools-actions">
+                            <button class="action-btn" onclick="runCacheLab(event)">Run Cache Lab</button>
+                        </div>
+                        <div id="cache-lab-result" class="tools-item-sub" style="margin-top:8px;">—</div>
+                        <p class="tools-hint">Rules that maximize hits: keep system prompts byte-stable (the swarm's BLUEPRINT re-use does this), reuse session ids, and prefer models with cheap cached reads (see Compare).</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Media View (Multimedia Suite — NFA semantic tokens only) -->
+        <section class="main-content tools-view" id="media-view" style="display:none;">
+            <div class="tools-head">
+                <h2>Multimedia Suite</h2>
+                <p id="media-route-summary">Local GPU first for safe image jobs · cloud for premium &amp; video — routing and cost shown before every submit.</p>
+            </div>
+
+            <div class="nfa-tabs" role="tablist">
+                <button class="nfa-nav-item" id="mtab-create" onclick="mediaTab('create')">Create</button>
+                <button class="nfa-nav-item" id="mtab-library" onclick="mediaTab('library')">Library</button>
+                <button class="nfa-nav-item" id="mtab-jobs" onclick="mediaTab('jobs')">Jobs</button>
+                <button class="nfa-nav-item" id="mtab-characters" onclick="mediaTab('characters')">Characters</button>
+                <span class="nfa-spacer"></span>
+                <span class="nfa-badge" id="media-cloud-badge">cloud: checking…</span>
+            </div>
+            <div class="nfa-divider" role="presentation"></div>
+
+            <!-- Create tab -->
+            <div id="media-create" class="nfa-tabpane">
+                <div class="tools-grid">
+                    <div class="nfa-surface">
+                        <h3 class="nfa-title">Generate</h3>
+                        <label class="nfa-label">Kind</label>
+                        <div class="nfa-kindrow" id="media-kinds"></div>
+                        <label class="nfa-label" for="media-prompt">Prompt</label>
+                        <textarea id="media-prompt" class="nfa-input" rows="3" placeholder="Describe the image or video…"></textarea>
+                        <label class="nfa-label" for="media-negative">Negative (local image only)</label>
+                        <input type="text" id="media-negative" class="nfa-input" placeholder="blurry, low quality, watermark" autocomplete="off">
+                        <label class="nfa-label" for="media-source">Input asset / source URL (edit · animate · cloud image-to-X)</label>
+                        <input type="text" id="media-source" class="nfa-input" placeholder="public https URL for cloud inputs" autocomplete="off">
+                        <div class="nfa-paramrow">
+                            <div><label class="nfa-label">Aspect</label>
+                                <select id="media-aspect" class="nfa-input"><option>16:9</option><option>1:1</option><option>9:16</option><option>4:3</option><option>3:4</option></select></div>
+                            <div><label class="nfa-label">Route</label>
+                                <select id="media-route" class="nfa-input"><option value="auto">Auto</option><option value="comfyui-local">Local GPU</option><option value="kie">Cloud (KIE)</option></select></div>
+                            <div><label class="nfa-label">Quality</label>
+                                <select id="media-quality" class="nfa-input"><option value="720p">720p</option><option value="1080p">1080p</option></select></div>
+                        </div>
+                        <div class="nfa-estimateline" id="media-estimate">Choose a kind to see route + cost.</div>
+                        <div class="nfa-actions">
+                            <button class="nfa-btn nfa-btn-primary" onclick="mediaSubmit(event)">Generate</button>
+                        </div>
+                    </div>
+                    <div class="nfa-surface">
+                        <h3 class="nfa-title">Latest result</h3>
+                        <div id="media-latest" class="nfa-latest"><span class="nfa-muted">Nothing yet — your first generation will appear here.</span></div>
+                        <h3 class="nfa-title" style="margin-top:16px;">Presets</h3>
+                        <div id="media-presets" class="nfa-presetrow"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Library tab -->
+            <div id="media-library" class="nfa-tabpane" style="display:none;">
+                <div class="nfa-surface">
+                    <div class="nfa-toolbar">
+                        <h3 class="nfa-title">Asset Library</h3>
+                        <span class="nfa-toggle" id="media-autorefresh" onclick="mediaToggleAuto()" role="switch" aria-checked="false" tabindex="0">auto-refresh: off</span>
+                    </div>
+                    <div id="media-grid" class="nfa-grid"></div>
+                </div>
+            </div>
+
+            <!-- Jobs tab -->
+            <div id="media-jobs" class="nfa-tabpane" style="display:none;">
+                <div class="nfa-surface">
+                    <div class="nfa-toolbar"><h3 class="nfa-title">Job History</h3></div>
+                    <table class="tools-table" id="media-jobs-table">
+                        <thead><tr><th>Job</th><th>Kind</th><th>Route</th><th>Model</th><th>State</th><th>Cost (est→act)</th><th>Updated</th><th></th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Characters tab -->
+            <div id="media-characters" class="nfa-tabpane" style="display:none;">
+                <div class="nfa-surface">
+                    <div class="nfa-toolbar"><h3 class="nfa-title">Create Character</h3></div>
+                    <p class="nfa-muted" style="margin-bottom:10px;">From one photo link, build a reusable animated-film character (3D-look stylized imagery, identity preserved - not a true 3D model). ~10 credits.</p>
+                    <div class="tools-grid" style="grid-template-columns: 2fr 1fr auto; gap:10px; align-items:end;">
+                        <div><label class="nfa-label">Photo link (public https URL)</label>
+                            <input type="text" id="char-source" class="nfa-input" placeholder="https://…/photo.jpg"></div>
+                        <div><label class="nfa-label">Character name</label>
+                            <input type="text" id="char-name" class="nfa-input" placeholder="e.g. Maya"></div>
+                        <button class="nfa-btn nfa-btn-primary" onclick="createCharacter(event)">Create Character</button>
+                    </div>
+                    <div id="char-create-note" class="nfa-muted" style="margin-top:8px;"></div>
+                </div>
+                <div style="margin-top:16px;">
+                    <h3 class="nfa-title" style="margin-bottom:10px;">Your Characters</h3>
+                    <div id="char-grid" class="nfa-grid"></div>
+                </div>
+            </div>
+        </section>
+
     </div>
 
     <!-- Task Modal -->
@@ -467,18 +1188,18 @@
             <h3>Set Mission Context</h3>
             <p style="color:var(--text-secondary); margin-bottom:16px;">Feed a massive project specification or a GitHub README directly to the Lead Agent.</p>
             
-            <label style="color:white; font-size:13px; margin-bottom:6px; display:block;">Raw URL (e.g. GitHub raw.githubusercontent.com)</label>
+            <label style="color:var(--text-primary); font-size:13px; margin-bottom:6px; display:block;">Raw URL (e.g. GitHub raw.githubusercontent.com)</label>
             <input type="text" id="ctx-url" class="modal-input" placeholder="https://raw.githubusercontent.com/..." autocomplete="off">
-            
-            <label style="color:white; font-size:13px; margin-bottom:6px; display:block;">Or Direct Text Input</label>
+
+            <label style="color:var(--text-primary); font-size:13px; margin-bottom:6px; display:block;">Or Direct Text Input</label>
             <textarea id="ctx-text" class="modal-input" placeholder="Paste your detailed project requirements here..." rows="6" style="resize:vertical;"></textarea>
-            
-            <label style="color:white; font-size:13px; margin-bottom:6px; display:block;">Assign To Agent</label>
+
+            <label style="color:var(--text-primary); font-size:13px; margin-bottom:6px; display:block;">Assign To Agent</label>
             <input type="text" id="ctx-owner" class="modal-input" value="tech-lead" autocomplete="off">
             
             <div class="modal-actions">
                 <button class="btn-cancel" onclick="closeContextModal()">Cancel</button>
-                <button class="action-btn" onclick="submitContext(event)" style="background:rgba(168, 85, 247, 0.2); border-color:var(--color-completed); color:var(--color-completed);">Initialize Protocol</button>
+                <button class="action-btn action-btn-broadcast" onclick="submitContext(event)">Initialize Protocol</button>
             </div>
         </div>
     </div>
@@ -492,6 +1213,718 @@
 
     let currentEventSource = null;
     let currentTeam = '';
+
+    // ---- View switching (Board / Tools) ----
+    function switchView(view) {
+        const views = { board: 'main-view', tools: 'tools-view', models: 'models-view', media: 'media-view' };
+        Object.entries(views).forEach(([name, id]) => {
+            document.getElementById(id).style.display = (name === view) ? '' : 'none';
+            const btn = document.getElementById('nav-' + name);
+            if (btn) btn.classList.toggle('nav-btn-active', name === view);
+        });
+        if (view === 'tools') {
+            loadMcp();
+            loadSkills();
+            loadProfiles();
+        }
+        if (typeof switchViewExtend === 'function') switchViewExtend(view);
+    }
+    window.switchView = switchView;
+
+    // ---- Tools: MCP servers ----
+    async function loadMcp() {
+        const listEl = document.getElementById('mcp-list');
+        try {
+            const res = await fetch('/api/tools/mcp');
+            const data = await res.json();
+            const servers = data.servers || {};
+            listEl.replaceChildren();
+            const names = Object.keys(servers);
+            if (!names.length) {
+                listEl.innerHTML = '<div class="tools-item-sub">No MCP servers configured.</div>';
+                return;
+            }
+            names.forEach((name) => {
+                const cfg = servers[name];
+                const item = document.createElement('div');
+                item.className = 'tools-item';
+                const sub = cfg.type === 'http' ? (cfg.url || '') : `${cfg.command || ''} ${(cfg.args || []).join(' ')}`;
+                item.innerHTML = `
+                    <div class="tools-item-meta">
+                        <div class="tools-item-name">${escapeHtml(name)}</div>
+                        <div class="tools-item-sub">${escapeHtml(sub)}</div>
+                    </div>
+                    <span class="tools-item-badge">${escapeHtml(cfg.type || '?')}</span>
+                    <span class="tools-item-sub" id="mcp-status-${escapeHtml(name)}"></span>
+                    <div class="tools-item-actions">
+                        ${cfg.type === 'http' ? `<button class="tools-mini-btn" onclick="testMcp('${escapeHtml(name)}')">Test</button>` : ''}
+                        <button class="tools-mini-btn tools-mini-danger" onclick="removeMcp('${escapeHtml(name)}')">Remove</button>
+                    </div>`;
+                listEl.appendChild(item);
+            });
+        } catch (e) {
+            listEl.innerHTML = '<div class="tools-item-sub tools-status-bad">Failed to load MCP servers.</div>';
+        }
+    }
+
+    async function toolsPost(endpoint, payload) {
+        const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        return res.json();
+    }
+
+    async function addMcp(ev) {
+        ev.preventDefault();
+        const name = document.getElementById('mcp-name').value.trim();
+        const type = document.getElementById('mcp-type').value;
+        let config;
+        if (type === 'http') {
+            const url = document.getElementById('mcp-url').value.trim();
+            if (!name || !url) return alert('Name and URL required');
+            config = { type: 'http', url };
+        } else {
+            const command = document.getElementById('mcp-cmd').value.trim();
+            if (!name || !command) return alert('Name and command required');
+            const args = document.getElementById('mcp-args').value.split(',').map((s) => s.trim()).filter(Boolean);
+            config = { type: 'stdio', command, ...(args.length ? { args } : {}) };
+        }
+        const result = await toolsPost('/api/tools/mcp', { action: 'add', name, config });
+        if (result.status === 'error') return alert(result.error);
+        loadMcp();
+    }
+
+    async function removeMcp(name) {
+        if (!confirm(`Remove MCP server "${name}"?`)) return;
+        await toolsPost('/api/tools/mcp', { action: 'remove', name });
+        loadMcp();
+    }
+
+    async function testMcp(name) {
+        const statusEl = document.getElementById(`mcp-status-${name}`);
+        if (statusEl) statusEl.textContent = 'testing…';
+        const result = await toolsPost('/api/tools/mcp', { action: 'test', name });
+        if (statusEl) {
+            if (result.ok === true) { statusEl.textContent = 'connected'; statusEl.className = 'tools-item-sub tools-status-ok'; }
+            else if (result.ok === null) { statusEl.textContent = result.note || 'n/a'; statusEl.className = 'tools-item-sub'; }
+            else { statusEl.textContent = `down (${result.http_status || result.error || 'error'})`; statusEl.className = 'tools-item-sub tools-status-bad'; }
+        }
+    }
+
+    // ---- Tools: Skills ----
+    async function loadSkills() {
+        const listEl = document.getElementById('skills-list');
+        try {
+            const res = await fetch('/api/tools/skills');
+            const data = await res.json();
+            const skills = data.skills || [];
+            listEl.replaceChildren();
+            if (!skills.length) {
+                listEl.innerHTML = '<div class="tools-item-sub">No skills installed.</div>';
+                return;
+            }
+            skills.forEach((skill) => {
+                const item = document.createElement('div');
+                item.className = 'tools-item';
+                item.innerHTML = `
+                    <div class="tools-item-meta">
+                        <div class="tools-item-name">${escapeHtml(skill.name)}</div>
+                        <div class="tools-item-sub">${escapeHtml(skill.description || '')}</div>
+                    </div>
+                    <span class="tools-item-badge">${escapeHtml((skill.scopes || []).join(' · '))}</span>
+                    <div class="tools-item-actions">
+                        <button class="tools-mini-btn tools-mini-danger" onclick="removeSkill('${escapeHtml(skill.name)}')">Remove</button>
+                    </div>`;
+                listEl.appendChild(item);
+            });
+        } catch (e) {
+            listEl.innerHTML = '<div class="tools-item-sub tools-status-bad">Failed to load skills.</div>';
+        }
+    }
+
+    async function addSkill(ev) {
+        ev.preventDefault();
+        const name = document.getElementById('skill-name').value.trim();
+        const description = document.getElementById('skill-desc').value.trim();
+        const content = document.getElementById('skill-content').value;
+        if (!name || !content.trim()) return alert('Name and content required');
+        const result = await toolsPost('/api/tools/skills', { action: 'add', name, description, content });
+        if (result.status === 'error') return alert(result.error);
+        loadSkills();
+    }
+
+    async function removeSkill(name) {
+        if (!confirm(`Remove skill "${name}" from all scopes?`)) return;
+        await toolsPost('/api/tools/skills', { action: 'remove', name });
+        loadSkills();
+    }
+
+    // ---- Tools: Profiles ----
+    async function loadProfiles() {
+        const listEl = document.getElementById('profiles-list');
+        try {
+            const res = await fetch('/api/tools/profiles');
+            const data = await res.json();
+            listEl.replaceChildren();
+            (data.profiles || []).forEach((p) => {
+                const item = document.createElement('div');
+                item.className = 'tools-item';
+                item.innerHTML = `
+                    <div class="tools-item-meta">
+                        <div class="tools-item-name">${escapeHtml(p.name)}${p.default ? ' ★' : ''}</div>
+                        <div class="tools-item-sub">${escapeHtml(p.description || '')}</div>
+                    </div>
+                    <span class="tools-item-badge">${escapeHtml(p.model || p.agent || '')}</span>`;
+                listEl.appendChild(item);
+            });
+        } catch (e) {
+            listEl.innerHTML = '<div class="tools-item-sub tools-status-bad">Failed to load profiles.</div>';
+        }
+    }
+    window.addMcp = addMcp; window.removeMcp = removeMcp; window.testMcp = testMcp;
+    window.addSkill = addSkill; window.removeSkill = removeSkill;
+
+    // ---- Models view (OpenRouter) ----
+    let MODEL_CATALOG = [];
+    let ROUTING = null;
+    let ROLE_DOCS = {};
+    let COMPARE_SET = [];
+    let rankingsTimer = null;
+
+    function fmtUsd(v) {
+        if (v === null || v === undefined) return '—';
+        return '$' + Number(v).toFixed(v < 1 ? 3 : 2);
+    }
+
+    function fmtTokens(n) {
+        if (n === null || n === undefined) return '—';
+        if (n >= 1e9) return (n / 1e9).toFixed(1) + 'B';
+        if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+        if (n >= 1e3) return (n / 1e3).toFixed(1) + 'k';
+        return String(n);
+    }
+
+    function switchViewExtend(view) {
+        // stop rankings polling when leaving the models view
+        if (view !== 'models' && rankingsTimer) {
+            clearInterval(rankingsTimer); rankingsTimer = null;
+            const btn = document.getElementById('rankings-auto');
+            if (btn) btn.textContent = 'Auto 30s: off';
+        }
+        // stop media auto-refresh when leaving the media view
+        if (view !== 'media' && typeof mediaAutoTimer !== 'undefined' && mediaAutoTimer) {
+            clearInterval(mediaAutoTimer); mediaAutoTimer = null;
+            const el = document.getElementById('media-autorefresh');
+            if (el) { el.classList.remove('on'); el.textContent = 'auto-refresh: off'; }
+        }
+        if (view === 'models') {
+            loadModelsView();
+        }
+        if (view === 'media' && typeof loadMediaView === 'function') {
+            loadMediaView();
+        }
+    }
+
+    async function loadModelsView() {
+        try {
+            const [modelsRes, routingRes] = await Promise.all([
+                fetch('/api/openrouter/models'), fetch('/api/openrouter/routing'),
+            ]);
+            MODEL_CATALOG = (await modelsRes.json()).models || [];
+            const routingData = await routingRes.json();
+            ROUTING = routingData.routing; ROLE_DOCS = routingData.role_docs || {};
+
+            const dl = document.getElementById('model-catalog');
+            dl.replaceChildren(...MODEL_CATALOG.map((m) => {
+                const opt = document.createElement('option');
+                opt.value = m.id;
+                opt.label = `${fmtUsd(m.prompt_per_m)}/M in · ${fmtTokens(m.context_length)} ctx`;
+                return opt;
+            }));
+            document.getElementById('model-pick').addEventListener('change', onModelPick);
+            document.getElementById('compare-pick').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addCompare(); } });
+            onModelPick();
+
+            renderAutorouter();
+            loadRankings();
+            loadKeyStats();
+        } catch (e) {
+            console.error('models view load failed', e);
+        }
+    }
+
+    function onModelPick() {
+        const id = document.getElementById('model-pick').value.trim();
+        const m = MODEL_CATALOG.find((x) => x.id === id);
+        const meta = document.getElementById('model-pick-meta');
+        if (m) meta.textContent = `${fmtTokens(m.context_length)} context · ${fmtUsd(m.prompt_per_m)}/M in · ${fmtUsd(m.completion_per_m)}/M out${m.free ? ' · FREE' : ''}`;
+        else meta.textContent = '—';
+    }
+
+    async function setPrimaryModel(ev) {
+        ev.preventDefault();
+        const model = document.getElementById('model-pick').value.trim();
+        if (!model) return alert('Pick a model first');
+        const result = await toolsPost('/api/openrouter/set-model', { model });
+        if (result.status === 'error') return alert(result.error);
+        ROUTING.roles.primary = model;
+        renderAutorouter();
+        alert(`Primary model set to ${model}. Applies to newly spawned agents.`);
+    }
+
+    function renderAutorouter() {
+        const wrap = document.getElementById('autorouter-roles');
+        wrap.replaceChildren();
+        Object.entries(ROLE_DOCS).forEach(([role, doc]) => {
+            const row = document.createElement('div');
+            row.className = 'autorouter-role';
+            row.innerHTML = `
+                <div class="autorouter-role-meta">
+                    <div class="autorouter-role-name">${escapeHtml(role)}</div>
+                    <div class="autorouter-role-doc">${escapeHtml(doc)}</div>
+                </div>
+                <input type="text" id="role-${escapeHtml(role)}" value="${escapeHtml((ROUTING.roles || {})[role] || '')}" list="model-catalog" autocomplete="off">`;
+            wrap.appendChild(row);
+        });
+    }
+
+    async function saveRouting(ev) {
+        ev.preventDefault();
+        const roles = {};
+        Object.keys(ROLE_DOCS).forEach((role) => {
+            roles[role] = document.getElementById(`role-${role}`).value.trim();
+        });
+        const result = await toolsPost('/api/openrouter/routing', { routing: { roles } });
+        if (result.status === 'error') return alert(result.error);
+        ROUTING.roles = roles;
+        alert('Routing saved and applied to the swarm profile.');
+    }
+
+    async function loadRankings() {
+        const dataset = document.getElementById('rankings-dataset').value;
+        const tbody = document.querySelector('#rankings-table tbody');
+        try {
+            const res = await fetch(`/api/openrouter/rankings?dataset=${dataset}`);
+            const data = await res.json();
+            if (data.error) { tbody.innerHTML = `<tr><td colspan="5" class="tools-status-bad">${escapeHtml(data.error)}</td></tr>`; return; }
+            tbody.replaceChildren(...(data.rows || []).map((r, i) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${i + 1}</td>
+                    <td>${escapeHtml(r.model)}</td>
+                    <td class="num">${fmtTokens(r.tokens_7d)}</td>
+                    <td class="num">${fmtUsd(r.prompt_per_m)}</td>
+                    <td class="num">${fmtTokens(r.context_length)}</td>`;
+                return tr;
+            }));
+            document.getElementById('rankings-updated').textContent = 'updated ' + new Date().toLocaleTimeString();
+        } catch (e) {
+            tbody.innerHTML = '<tr><td colspan="5" class="tools-status-bad">Rankings fetch failed.</td></tr>';
+        }
+    }
+
+    function toggleRankingsAuto() {
+        const btn = document.getElementById('rankings-auto');
+        if (rankingsTimer) {
+            clearInterval(rankingsTimer); rankingsTimer = null;
+            btn.textContent = 'Auto 30s: off';
+        } else {
+            loadRankings();
+            rankingsTimer = setInterval(loadRankings, 30000);
+            btn.textContent = 'Auto 30s: on';
+        }
+    }
+
+    function addCompare() {
+        const input = document.getElementById('compare-pick');
+        const id = input.value.trim();
+        if (!id) return;
+        const m = MODEL_CATALOG.find((x) => x.id === id);
+        if (!m) return alert('Unknown model id');
+        if (!COMPARE_SET.find((x) => x.id === id) && COMPARE_SET.length < 5) COMPARE_SET.push(m);
+        input.value = '';
+        renderCompare();
+    }
+
+    function clearCompare() { COMPARE_SET = []; renderCompare(); }
+
+    function renderCompare() {
+        const tbody = document.querySelector('#compare-table tbody');
+        if (!COMPARE_SET.length) { tbody.innerHTML = '<tr><td colspan="7" class="tools-item-sub">Add models above to compare.</td></tr>'; return; }
+        tbody.replaceChildren(...COMPARE_SET.map((m) => {
+            const discount = (m.prompt_per_m && m.cached_read_per_m !== null)
+                ? Math.max(0, Math.round((1 - m.cached_read_per_m / m.prompt_per_m) * 100)) + '%' : '—';
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${escapeHtml(m.id)}</td>
+                <td class="num">${fmtTokens(m.context_length)}</td>
+                <td class="num">${fmtUsd(m.prompt_per_m)}</td>
+                <td class="num">${fmtUsd(m.completion_per_m)}</td>
+                <td class="num">${fmtUsd(m.cached_read_per_m)}</td>
+                <td class="num">${discount}</td>
+                <td>${escapeHtml(String(m.modality || '—'))}</td>`;
+            return tr;
+        }));
+    }
+
+    async function loadKeyStats() {
+        const el = document.getElementById('key-stats');
+        try {
+            const res = await fetch('/api/openrouter/key');
+            const d = await res.json();
+            if (d.error) { el.innerHTML = `<div class="tools-item-sub tools-status-bad">${escapeHtml(d.error)}</div>`; return; }
+            const rows = [
+                ['Spend today', '$' + Number(d.usage_daily || 0).toFixed(3)],
+                ['Spend this week', '$' + Number(d.usage_weekly || 0).toFixed(3)],
+                ['Spend this month', '$' + Number(d.usage_monthly || 0).toFixed(3)],
+                ['Monthly limit', d.limit === null || d.limit === undefined ? 'unlimited' : '$' + Number(d.limit).toFixed(2)],
+                ['Limit remaining', d.limit_remaining === null || d.limit_remaining === undefined ? '—' : '$' + Number(d.limit_remaining).toFixed(2)],
+                ['Account credits', '$' + Number(d.total_credits || 0).toFixed(2)],
+                ['Lifetime usage', '$' + Number(d.total_usage || 0).toFixed(2)],
+            ];
+            el.replaceChildren(...rows.map(([k, v]) => {
+                const div = document.createElement('div');
+                div.className = 'key-stat';
+                div.innerHTML = `<span class="k">${escapeHtml(k)}</span><span class="v">${escapeHtml(v)}</span>`;
+                return div;
+            }));
+        } catch (e) {
+            el.innerHTML = '<div class="tools-item-sub tools-status-bad">Key stats failed.</div>';
+        }
+    }
+
+    async function runCacheLab(ev) {
+        ev.preventDefault();
+        const prompt = document.getElementById('cache-prompt').value;
+        if (!prompt.trim()) return alert('Enter a prompt to test');
+        const out = document.getElementById('cache-lab-result');
+        out.textContent = 'running two passes…';
+        const model = ROUTING?.roles?.primary || '';
+        const result = await toolsPost('/api/openrouter/cache-lab', { prompt, model });
+        if (result.status === 'error') { out.className = 'tools-item-sub tools-status-bad'; out.textContent = result.error; return; }
+        const runs = result.lab.runs;
+        const hit = result.lab.cache_hit_second_run;
+        out.className = 'tools-item-sub ' + (hit ? 'tools-status-ok' : 'tools-status-bad');
+        out.textContent = `${result.lab.model} — run1: ${runs[0].prompt_tokens} prompt / ${runs[0].cached_tokens} cached · run2: ${runs[1].prompt_tokens} prompt / ${runs[1].cached_tokens} cached → ${hit ? 'CACHE HIT' : 'no cache hit — prompts under the provider minimum (~1k tokens) or model without caching; try a longer prompt'} · cost $${(Number(runs[0].cost) + Number(runs[1].cost)).toFixed(6)}`;
+    }
+
+    window.setPrimaryModel = setPrimaryModel; window.saveRouting = saveRouting;
+    window.loadRankings = loadRankings; window.toggleRankingsAuto = toggleRankingsAuto;
+    window.addCompare = addCompare; window.clearCompare = clearCompare; window.runCacheLab = runCacheLab;
+
+    // ---- Media view (Multimedia Suite) ----
+    const MEDIA_KINDS = [
+        { id: 't2img', label: 'Image', note: 'local GPU or cloud' },
+        { id: 'img2img', label: 'Image→Image', note: 'local draft tier' },
+        { id: 'edit', label: 'Edit', note: 'cloud (Kontext)' },
+        { id: 't2v', label: 'Video', note: 'cloud (Runway)' },
+        { id: 'i2v', label: 'Animate', note: 'cloud (Runway i2v)' },
+        { id: 'upscale', label: 'Enhance', note: 'cloud (model pending)' },
+    ];
+    const MEDIA_PRESETS = [
+        { label: 'App icon', prompt: 'flat modern app icon, {subject}, centered, bold shape, minimal, high contrast', kind: 't2img' },
+        { label: 'Product shot', prompt: 'professional product photography of {subject}, studio lighting, dark background, ultra detailed', kind: 't2img' },
+        { label: 'Hero banner', prompt: 'wide hero illustration for a developer tool, {subject}, dramatic lighting, 16:9', kind: 't2img' },
+        { label: 'Logo concept', prompt: 'minimal vector logo concept for {subject}, geometric, two colors', kind: 't2img' },
+    ];
+    let mediaKind = 't2img';
+    let mediaProviders = null;
+    let mediaAutoTimer = null;
+
+    function mediaTab(tab) {
+        ['create', 'library', 'jobs', 'characters'].forEach((t) => {
+            document.getElementById('media-' + t).style.display = (t === tab) ? '' : 'none';
+            document.getElementById('mtab-' + t).classList.toggle('active', t === tab);
+        });
+        if (tab === 'library') loadMediaAssets();
+        if (tab === 'jobs') loadMediaJobs();
+        if (tab === 'characters') loadCharacters();
+        if (tab === 'create') refreshMediaEstimate();
+    }
+
+    async function loadMediaView() {
+        renderMediaKinds();
+        renderMediaPresets();
+        await refreshMediaProviders();
+        refreshMediaEstimate();
+        loadMediaLatest();
+    }
+
+    function renderMediaKinds() {
+        const wrap = document.getElementById('media-kinds');
+        wrap.replaceChildren(...MEDIA_KINDS.map((k) => {
+            const b = document.createElement('button');
+            b.className = 'nfa-kind' + (k.id === mediaKind ? ' active' : '');
+            b.textContent = k.label;
+            b.title = k.note;
+            b.onclick = () => { mediaKind = k.id; renderMediaKinds(); refreshMediaEstimate(); };
+            return b;
+        }));
+    }
+
+    function renderMediaPresets() {
+        const wrap = document.getElementById('media-presets');
+        wrap.replaceChildren(...MEDIA_PRESETS.map((p) => {
+            const b = document.createElement('button');
+            b.className = 'nfa-mini';
+            b.textContent = p.label;
+            b.onclick = () => {
+                document.getElementById('media-prompt').value = p.prompt.replace('{subject}', 'the app');
+                mediaKind = p.kind; renderMediaKinds(); refreshMediaEstimate();
+            };
+            return b;
+        }));
+    }
+
+    async function refreshMediaProviders() {
+        try {
+            const res = await fetch('/api/media/providers');
+            mediaProviders = await res.json();
+            const cloud = mediaProviders.cloud || {};
+            const badge = document.getElementById('media-cloud-badge');
+            const h = cloud.health || {};
+            badge.className = 'nfa-badge ' + (h.ok ? 'ok' : 'warn');
+            badge.textContent = 'cloud: ' + (h.detail || (cloud.dormant ? 'dormant' : 'unknown'));
+        } catch (e) {
+            document.getElementById('media-cloud-badge').textContent = 'cloud: unreachable';
+        }
+    }
+
+    async function refreshMediaEstimate() {
+        const el = document.getElementById('media-estimate');
+        const source = document.getElementById('media-source').value.trim();
+        const params = buildMediaParams();
+        if (source) params.source_url = source;
+        try {
+            const res = await fetch('/api/media/estimate', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ kind: mediaKind, params, provider: routeOverride() }),
+            });
+            const plan = await res.json();
+            if (plan.error) { el.textContent = '⚠ ' + plan.error; return; }
+            const est = plan.estimate || {};
+            const cost = est.credits === 0 ? 'free (local GPU)' :
+                (est.credits != null ? `~${est.credits} credits (≈$${est.usd}) — estimate, verify on dashboard` : 'cost unknown — check dashboard');
+            el.textContent = `route: ${plan.provider}${plan.model ? ' · ' + plan.model : ''} · ${cost}`;
+        } catch (e) { el.textContent = 'estimate unavailable'; }
+    }
+
+    function routeOverride() {
+        const v = document.getElementById('media-route').value;
+        return v === 'auto' ? null : v;
+    }
+
+    function buildMediaParams() {
+        return {
+            aspect_ratio: document.getElementById('media-aspect').value,
+            quality: document.getElementById('media-quality').value,
+            duration: 5,
+        };
+    }
+
+    async function mediaSubmit(ev) {
+        ev.preventDefault();
+        const prompt = document.getElementById('media-prompt').value.trim();
+        if (!prompt) return alert('Enter a prompt first');
+        const params = buildMediaParams();
+        const source = document.getElementById('media-source').value.trim();
+        if (source) params.source_url = source;
+        const payload = { kind: mediaKind, prompt, negative: document.getElementById('media-negative').value, params };
+        const override = routeOverride();
+        if (override) payload.provider = override;
+        const btn = ev.target; btn.disabled = true;
+        try {
+            const result = await toolsPost('/api/media/jobs', payload);
+            if (result.status === 'error') return alert(result.error);
+            loadMediaJobs(); mediaTab('jobs');
+        } finally { btn.disabled = false; }
+    }
+
+    async function loadMediaJobs() {
+        const tbody = document.querySelector('#media-jobs-table tbody');
+        try {
+            const res = await fetch('/api/media/jobs?limit=50');
+            const data = await res.json();
+            tbody.replaceChildren(...(data.jobs || []).map((j) => {
+                const tr = document.createElement('tr');
+                const stateBadge = `<span class="nfa-badge ${stateClass(j.state)}">${escapeHtml(j.state)}</span>`;
+                const cost = `${j.cost_estimate_credits != null ? '~' + j.cost_estimate_credits : '—'}${j.cost_actual_credits != null ? ' → ' + j.cost_actual_credits : ''}`;
+                const canRetry = ['failed', 'timed_out', 'succeeded_provider_download_failed'].includes(j.state);
+                tr.innerHTML = `
+                    <td title="${escapeHtml(j.prompt || '')}">${escapeHtml((j.prompt || '').slice(0, 42))}${(j.prompt || '').length > 42 ? '…' : ''}</td>
+                    <td>${escapeHtml(j.kind)}</td>
+                    <td>${escapeHtml(j.provider || '—')}</td>
+                    <td>${escapeHtml(j.model || '—')}</td>
+                    <td>${stateBadge}</td>
+                    <td class="num">${escapeHtml(cost)}</td>
+                    <td>${escapeHtml(j.updated_at || '')}</td>
+                    <td>${canRetry ? `<button class="nfa-mini" onclick="retryJob('${escapeHtml(j.id)}')">Retry</button>` : ''}</td>`;
+                return tr;
+            }));
+        } catch (e) {
+            tbody.innerHTML = '<tr><td colspan="8" class="tools-status-bad">Failed to load jobs.</td></tr>';
+        }
+    }
+
+    function stateClass(state) {
+        if (state === 'succeeded') return 'ok';
+        if (state === 'failed' || state === 'timed_out' || state === 'succeeded_provider_download_failed') return 'bad';
+        if (['queued', 'running', 'provider_succeeded', 'downloading'].includes(state)) return 'warn';
+        return '';
+    }
+
+    async function retryJob(id) {
+        await toolsPost(`/api/media/jobs/${id}/retry`, {});
+        loadMediaJobs();
+    }
+
+    async function loadMediaAssets() {
+        const grid = document.getElementById('media-grid');
+        try {
+            const res = await fetch('/api/media/assets');
+            const data = await res.json();
+            const assets = data.assets || [];
+            if (!assets.length) { grid.innerHTML = '<span class="nfa-muted">No assets yet — generate something first.</span>'; return; }
+            grid.replaceChildren(...assets.map((a) => {
+                const cell = document.createElement('div');
+                cell.className = 'nfa-cell';
+                const url = `/api/media/assets/${encodeURIComponent(a.id)}/file`;
+                const media = a.kind === 'video'
+                    ? `<video src="${url}" controls muted></video>`
+                    : `<img src="${url}" loading="lazy" alt="${escapeHtml(a.id)}">`;
+                cell.innerHTML = `
+                    ${media}
+                    <div class="nfa-cell-meta">
+                        <span>${escapeHtml(a.kind)} · ${(a.bytes / 1024).toFixed(0)}kB</span>
+                        <span class="nfa-cell-actions">
+                            <button class="nfa-mini" title="Reuse as prompt input" onclick="reuseAsset('${escapeHtml(a.id)}')">↺</button>
+                            <a class="nfa-mini" style="text-decoration:none" href="${url}" download>↓</a>
+                        </span>
+                    </div>`;
+                return cell;
+            }));
+            loadMediaLatest();
+        } catch (e) {
+            grid.innerHTML = '<span class="nfa-muted">Asset library unavailable.</span>';
+        }
+    }
+
+    async function loadMediaLatest() {
+        try {
+            const res = await fetch('/api/media/assets');
+            const data = await res.json();
+            const latest = (data.assets || [])[0];
+            const el = document.getElementById('media-latest');
+            if (!latest) return;
+            const url = `/api/media/assets/${encodeURIComponent(latest.id)}/file`;
+            el.innerHTML = latest.kind === 'video'
+                ? `<video src="${url}" controls autoplay muted loop></video>`
+                : `<img src="${url}" alt="latest output">`;
+        } catch (e) { /* keep placeholder */ }
+    }
+
+    function reuseAsset(id) {
+        // Cloud image-to-X needs a public URL; local asset ids feed local img2img jobs.
+        document.getElementById('media-source').value = id;
+        mediaTab('create');
+        refreshMediaEstimate();
+    }
+
+    function mediaToggleAuto() {
+        const el = document.getElementById('media-autorefresh');
+        if (mediaAutoTimer) {
+            clearInterval(mediaAutoTimer); mediaAutoTimer = null;
+            el.classList.remove('on'); el.textContent = 'auto-refresh: off';
+        } else {
+            mediaAutoTimer = setInterval(() => { loadMediaAssets(); loadMediaJobs(); }, 5000);
+            el.classList.add('on'); el.textContent = 'auto-refresh: on';
+        }
+    }
+
+    // ---- Characters (reusable identity workflow) ----
+    async function loadCharacters() {
+        const grid = document.getElementById('char-grid');
+        try {
+            const res = await fetch('/api/media/characters');
+            const data = await res.json();
+            const chars = data.characters || [];
+            if (!chars.length) {
+                grid.innerHTML = '<span class="nfa-muted">No characters yet - create one from a photo link above.</span>';
+                return;
+            }
+            grid.replaceChildren(...chars.map((c) => {
+                const cell = document.createElement('div');
+                cell.className = 'nfa-cell';
+                const canonical = c.canonical_asset_id
+                    ? `<img src="/api/media/assets/${encodeURIComponent(c.canonical_asset_id)}/file" alt="${escapeHtml(c.name)}">`
+                    : `<div style="padding:40px 12px;text-align:center;" class="nfa-muted">building…</div>`;
+                const variantThumbs = (c.variants || []).slice(0, 4).map((v) =>
+                    `<img src="/api/media/assets/${encodeURIComponent(v.asset_id)}/file" style="width:44px;height:44px;border-radius:8px;object-fit:cover;margin-right:4px;" title="${escapeHtml(v.prompt.slice(0, 60))}">`).join('');
+                const sceneCount = (c.scenes || []).length;
+                cell.innerHTML = `
+                    ${canonical}
+                    <div class="nfa-cell-meta">
+                        <span>${escapeHtml(c.name)} · ${(c.variants || []).length} looks · ${sceneCount} scenes</span>
+                    </div>
+                    <div style="padding:8px 10px;">
+                        ${variantThumbs ? `<div style="margin-bottom:8px;">${variantThumbs}</div>` : ''}
+                        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                            <button class="nfa-mini" onclick="charVariantPrompt('${escapeHtml(c.id)}', '${escapeHtml(c.name)}')">New look…</button>
+                            <button class="nfa-mini" onclick="animateCharacter('${escapeHtml(c.id)}', '${escapeHtml(c.name)}')">Animate</button>
+                        </div>
+                    </div>`;
+                return cell;
+            }));
+        } catch (e) {
+            grid.innerHTML = '<span class="nfa-muted">Could not load characters.</span>';
+        }
+    }
+
+    async function createCharacter(ev) {
+        ev.preventDefault();
+        const source = document.getElementById('char-source').value.trim();
+        const name = document.getElementById('char-name').value.trim();
+        if (!source || !name) return alert('Photo link and name required');
+        const note = document.getElementById('char-create-note');
+        note.textContent = 'Creating ' + name + ' (2 stylization passes, ~1 min)…';
+        const result = await toolsPost('/api/media/jobs', {
+            kind: 'character', prompt: 'create character', name,
+            params: { source_url: source, name },
+        });
+        if (result.status === 'error') { note.textContent = result.error; return; }
+        note.textContent = 'Building in the background - watch the Jobs tab; the character appears here when done.';
+        loadMediaJobs(); mediaTab('jobs');
+    }
+
+    async function charVariantPrompt(cid, name) {
+        const ask = prompt('New look for ' + name + ' - describe pose, clothing, expression, place, or camera angle:');
+        if (!ask || !ask.trim()) return;
+        const result = await toolsPost('/api/media/jobs', {
+            kind: 'variant', prompt: ask.trim(),
+            params: { character_id: cid },
+        });
+        if (result.status === 'error') return alert(result.error);
+        loadMediaJobs(); mediaTab('jobs');
+    }
+
+    async function animateCharacter(cid, name) {
+        const ask = prompt('Animate ' + name + ' - what should happen in the shot? (e.g. "she smiles and waves hello")');
+        if (ask === null) return;
+        const shot = ask.trim() || 'comes to life with a warm smile and a friendly wave, cinematic animated-movie quality';
+        const result = await toolsPost('/api/media/jobs', {
+            kind: 'i2v', prompt: shot,
+            params: { character_id: cid, duration: 5, quality: '720p' },
+        });
+        if (result.status === 'error') return alert(result.error);
+        loadMediaJobs(); mediaTab('jobs');
+    }
+    window.loadCharacters = loadCharacters; window.createCharacter = createCharacter;
+    window.charVariantPrompt = charVariantPrompt; window.animateCharacter = animateCharacter;
+
+    window.mediaTab = mediaTab; window.mediaSubmit = mediaSubmit; window.refreshMediaEstimate = refreshMediaEstimate;
+    window.retryJob = retryJob; window.reuseAsset = reuseAsset; window.mediaToggleAuto = mediaToggleAuto;
 
     function escapeHtml(value) {
         return String(value ?? '')
@@ -549,7 +1982,7 @@
                         <line x1="12" y1="16" x2="12.01" y2="16"></line>
                     </svg>
                     <div class="empty-title">ClawTeam Nexus</div>
-                    <p style="font-size: 16px;">Select a swarm to begin real-time monitoring.</p>
+                    <p style="font-size: var(--nfa-typography-bodyLarge-size, 16px);">Select a swarm to begin real-time monitoring.</p>
                 </div>`;
             return;
         }
@@ -597,7 +2030,7 @@
                     <div class="header-meta" id="ui-meta">Establishing neural connection...</div>
                 </div>
                 <div style="display:flex; gap:12px;">
-                    <button onclick="openContextModal()" style="display:none; background:rgba(168, 85, 247, 0.2); border-color:var(--color-completed); color:var(--color-completed);" id="btn-provide-context" class="action-btn">
+                    <button onclick="openContextModal()" style="display:none; color:var(--color-broadcast);" id="btn-provide-context" class="action-btn action-btn-broadcast">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
                         Set Context
                     </button>
@@ -628,7 +2061,7 @@
             </div>
 
             <div class="header-info" style="margin-bottom: 24px;">
-                <div class="header-title" style="font-size: 28px;">Mission Control</div>
+                <div class="header-title" style="font-size: var(--nfa-typography-headlineLarge-size, 26px);">Mission Control</div>
                 <div class="header-meta">Real-time distributed task execution</div>
             </div>
 
@@ -741,6 +2174,22 @@
                     </div>
                 `).join('');
         });
+        applyFeaturedBox();
+    }
+
+    // Featured box: exactly one random task box per page carries the RGDS
+    // featured treatment (solid white stroke + rotating rainbow arc; two picks
+    // only on very dense boards). The pick is random per page load and stays
+    // stable across live SSE re-renders; it re-rolls only when that box is gone.
+    let featuredIndex = -1;
+    function applyFeaturedBox() {
+        const cards = document.querySelectorAll('.task-card');
+        document.querySelectorAll('.rgds-featured').forEach((el) => el.classList.remove('rgds-featured'));
+        if (!cards.length) { featuredIndex = -1; return; }
+        if (featuredIndex < 0 || featuredIndex >= cards.length) {
+            featuredIndex = Math.floor(Math.random() * cards.length);
+        }
+        cards[featuredIndex].classList.add('rgds-featured');
     }
 
     // Modal Operations

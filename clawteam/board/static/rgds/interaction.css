@@ -1,0 +1,121 @@
+/* Hover only for fine pointers; coarse/touch rely on pressed + focus-visible. */
+@media (hover: hover) and (pointer: fine) {
+  .rgds-interactive:hover:not(:disabled):not([aria-disabled="true"]),
+  .md-btn:hover:not(:disabled),
+  .md-theme-btn:hover:not(:disabled),
+  .md-card[data-interactive="true"]:hover {
+    background: color-mix(
+      in oklch,
+      var(--rgds-surface-base, var(--md-sys-color-surface-container-high))
+        calc(100% - var(--md-rgds-state-hover-surface-tint-amount)),
+      var(--md-rgds-state-hover-surface-tint) var(--md-rgds-state-hover-surface-tint-amount)
+    );
+    border-color: var(--md-rgds-state-hover-border-color);
+    box-shadow: var(--md-rgds-state-hover-elevation, var(--md-sys-elevation-level3));
+  }
+}
+
+.rgds-interactive,
+.md-btn,
+.md-theme-btn,
+.md-nav-item,
+.md-list-tile,
+.md-tab,
+.md-menu-item,
+.md-card[data-interactive="true"],
+button.rgds-interactive,
+a.rgds-interactive,
+[role="button"].rgds-interactive {
+  transition:
+    background-color var(--md-sys-motion-duration-medium) var(--md-sys-motion-easing-emphasized),
+    border-color var(--md-sys-motion-duration-medium) var(--md-sys-motion-easing-emphasized),
+    box-shadow var(--md-sys-motion-duration-medium) var(--md-sys-motion-easing-emphasized),
+    color var(--md-sys-motion-duration-short) var(--md-sys-motion-easing-emphasized),
+    transform var(--md-sys-motion-duration-short) var(--md-sys-motion-easing-emphasized);
+}
+
+.rgds-interactive:focus-visible,
+.md-btn:focus-visible,
+.md-theme-btn:focus-visible,
+.md-card[data-interactive="true"]:focus-visible {
+  outline: var(--md-rgds-state-focus-border-width) solid var(--md-rgds-state-focus-border-color);
+  outline-offset: var(--md-rgds-state-focus-border-offset);
+}
+
+.rgds-interactive:active:not(:disabled),
+.md-btn:active:not(:disabled) {
+  background: color-mix(
+    in oklch,
+    var(--rgds-surface-base, var(--md-sys-color-surface-container-high))
+      calc(100% - var(--md-rgds-state-pressed-surface-tint-amount)),
+    var(--md-rgds-state-pressed-surface-tint) var(--md-rgds-state-pressed-surface-tint-amount)
+  );
+  box-shadow: var(--md-rgds-state-pressed-elevation);
+  transform: scale(var(--md-rgds-state-pressed-scale));
+}
+
+.rgds-interactive[aria-pressed="true"],
+.rgds-interactive[aria-selected="true"],
+.md-theme-btn[aria-pressed="true"] {
+  background: var(--md-rgds-state-selected-surface);
+  color: var(--md-rgds-state-selected-on-surface, var(--md-sys-color-on-primary-container));
+  border-color: var(--md-rgds-state-selected-border-color);
+}
+
+.rgds-interactive:disabled,
+.rgds-interactive[aria-disabled="true"],
+.md-btn:disabled {
+  opacity: var(--md-rgds-state-disabled-opacity);
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+  pointer-events: none;
+}
+
+.rgds-state-hover {
+  background: color-mix(
+    in oklch,
+    var(--rgds-surface-base, var(--md-sys-color-surface-container-high))
+      calc(100% - var(--md-rgds-state-hover-surface-tint-amount)),
+    var(--md-rgds-state-hover-surface-tint) var(--md-rgds-state-hover-surface-tint-amount)
+  ) !important;
+  border-color: var(--md-rgds-state-hover-border-color) !important;
+  box-shadow: var(--md-rgds-state-hover-elevation, var(--md-sys-elevation-level3)) !important;
+}
+
+.rgds-state-focus {
+  outline: var(--md-rgds-state-focus-border-width) solid var(--md-rgds-state-focus-border-color) !important;
+  outline-offset: var(--md-rgds-state-focus-border-offset) !important;
+}
+
+.rgds-state-pressed {
+  background: color-mix(
+    in oklch,
+    var(--rgds-surface-base, var(--md-sys-color-surface-container-high))
+      calc(100% - var(--md-rgds-state-pressed-surface-tint-amount)),
+    var(--md-rgds-state-pressed-surface-tint) var(--md-rgds-state-pressed-surface-tint-amount)
+  ) !important;
+  transform: scale(var(--md-rgds-state-pressed-scale)) !important;
+}
+
+.rgds-state-selected {
+  background: var(--md-rgds-state-selected-surface) !important;
+  border-color: var(--md-rgds-state-selected-border-color) !important;
+}
+
+.rgds-state-disabled {
+  opacity: var(--md-rgds-state-disabled-opacity) !important;
+  box-shadow: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rgds-interactive,
+  .md-btn,
+  .md-theme-btn,
+  .md-card[data-interactive="true"],
+  .md-rainbow-pulse {
+    transition: none !important;
+    animation: none !important;
+    transform: none !important;
+  }
+}

@@ -1,0 +1,70 @@
+/* md.custom.rainbowPulse — Theme 4 featured surfaces only */
+
+@keyframes md-custom-rainbow-pulse {
+  0% {
+    background-position: 0% 50%;
+    filter: saturate(1) brightness(1);
+    opacity: 0.85;
+  }
+  50% {
+    background-position: 100% 50%;
+    filter: saturate(1.15) brightness(1.08);
+    opacity: 1;
+  }
+  100% {
+    background-position: 0% 50%;
+    filter: saturate(1) brightness(1);
+    opacity: 0.85;
+  }
+}
+
+@keyframes md-custom-rainbow-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.md-rainbow-pulse {
+  position: relative;
+  isolation: isolate;
+}
+
+.md-rainbow-pulse::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 2px;
+  border-radius: inherit;
+  background: var(--md-custom-rainbow-gradient);
+  background-size: 300% 300%;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 2;
+  opacity: calc(var(--md-custom-rainbow-enabled) * 1);
+  animation: md-custom-rainbow-pulse var(--md-ref-motion-custom-pulse-duration) ease-in-out infinite;
+}
+
+.md-rainbow-pulse::after {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 60%,
+    oklch(75% 0.15 230 / 0.55) 80%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+  opacity: calc(var(--md-custom-rainbow-enabled) * 0.55);
+  animation: md-custom-rainbow-rotate calc(var(--md-ref-motion-custom-pulse-duration) * 0.875) linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .md-rainbow-pulse::before,
+  .md-rainbow-pulse::after {
+    animation: none !important;
+  }
+}

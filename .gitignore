@@ -12,3 +12,10 @@ venv/
 uv.lock
 .claude/*.local.md
 node_modules/
+.clawteam-local/
+
+# local vendoring backups + test caches
+rgds.bak-*/
+.pytest_cache/
+*.tmp
+.zcode/

@@ -15,6 +15,7 @@ from __future__ import annotations
 import os
 import sys
 import tempfile
+import time
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Iterator
@@ -23,6 +24,31 @@ if sys.platform == "win32":
     import msvcrt
 else:
     import fcntl
+
+
+def _replace_with_retry(
+    src: str,
+    dst: str,
+    *,
+    attempts: int = 10,
+    initial_delay: float = 0.005,
+) -> None:
+    """``os.replace`` with a bounded retry for Windows sharing-violation races.
+
+    On Windows, concurrently replacing the same target can transiently fail
+    with ``PermissionError`` while another writer's handle is closing. POSIX
+    rename is immune, so the retry only ever triggers there.
+    """
+    delay = initial_delay
+    for attempt in range(attempts):
+        try:
+            os.replace(src, dst)
+            return
+        except PermissionError:
+            if attempt == attempts - 1:
+                raise
+            time.sleep(delay)
+            delay = min(delay * 2, 0.05)
 
 
 def atomic_write_text(
@@ -43,7 +69,7 @@ def atomic_write_text(
     try:
         with os.fdopen(fd, "w", encoding=encoding) as f:
             f.write(content)
-        os.replace(tmp, str(path))
+        _replace_with_retry(tmp, str(path))
     except BaseException:
         try:
             os.unlink(tmp)

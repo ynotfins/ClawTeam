@@ -1,0 +1,78 @@
+{
+  "$schema": "clawteam-board-theme/2",
+  "name": "clawteam-board-domain",
+  "description": "Board domain layer ON TOP of RGDS. All colors, spacing, shape, elevation, motion and state values come from the vendored @r3lentless/rgds-web tokens.css (clawteam/board/static/rgds/, see PROVENANCE.md). This file carries only mode metadata, CSS var() alias references, and board-specific sizes/weights. No color values live here.",
+  "rgds": {
+    "package": "@r3lentless/rgds-web",
+    "version": "1.1.0",
+    "figma_file_key": "KbhSAUCrADaqhxOm7jM2FC",
+    "figma_library": "R3lentless-Grind Design System — RGDS",
+    "vendored_dir": "clawteam/board/static/rgds",
+    "discovery_manifest": "C:\\Users\\ynotf\\.rgds\\RGDS_MANIFEST.json"
+  },
+  "default": "secondary-dark",
+  "modes": {
+    "primary-light": {
+      "label": "Primary Light",
+      "appearance": "light",
+      "liveBackground": false,
+      "tokens": {
+        "strokeGradient": "var(--md-custom-stroke-featured)"
+      }
+    },
+    "secondary-light": {
+      "label": "Secondary Light",
+      "appearance": "light",
+      "liveBackground": false,
+      "tokens": {
+        "strokeGradient": "var(--md-custom-stroke-featured)"
+      }
+    },
+    "primary-dark": {
+      "label": "Primary Dark",
+      "appearance": "dark",
+      "liveBackground": false,
+      "tokens": {
+        "strokeGradient": "var(--md-custom-stroke-featured)"
+      }
+    },
+    "secondary-dark": {
+      "label": "Secondary Dark",
+      "appearance": "dark",
+      "liveBackground": true,
+      "tokens": {
+        "strokeGradient": "var(--md-custom-rainbow-gradient)"
+      }
+    }
+  },
+  "domain": {
+    "shape": {
+      "iconXl": "56px",
+      "blur": "blur(20px)"
+    },
+    "typography": {
+      "bodySmall": {
+        "size": "12px"
+      },
+      "labelMedium": {
+        "size": "11px",
+        "weight": "600"
+      },
+      "labelLarge": {
+        "weight": "700"
+      },
+      "titleMedium": {
+        "weight": "600"
+      }
+    },
+    "sizing": {
+      "buttonMd": "36px"
+    }
+  },
+  "legacyModeMap": {
+    "light-google": "primary-light",
+    "light-orange": "secondary-light",
+    "dark-speakeasy": "secondary-dark",
+    "dark-orange": "primary-dark"
+  }
+}

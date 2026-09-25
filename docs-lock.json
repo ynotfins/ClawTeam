@@ -1,0 +1,18 @@
+{
+  "$schema": "clawteam-docs-lock/1",
+  "description": "Locked external dependencies consumed by this project (design systems and indexed docs). Verify before milestone exits.",
+  "dependencies": [
+    {
+      "name": "@r3lentless/rgds-web",
+      "kind": "design-system",
+      "version": "1.1.0",
+      "source": "npm registry (packed from D:/github/r3lentless-grind-design-system dist-packages/r3lentless-rgds-web-1.1.0.tgz)",
+      "consumed_at": "clawteam/board/static/rgds/",
+      "tgz_sha256": "531500fec5446563ddcfdb233ba85c690f9dc953cc5a3b98de31796faf672659",
+      "tokens_css_sha256": "d338841b39f3bffe0b8f7ccc2d183981844df2c91c2cf4a3d36734bc457aa7eb",
+      "discovery_manifest": "C:\\Users\\ynotf\\.rgds\\RGDS_MANIFEST.json",
+      "figma_file_key": "KbhSAUCrADaqhxOm7jM2FC",
+      "notes": "Canonical frontend/design system. Vendored verbatim; do not hand-edit. Upgrades re-vendor from the release tgz and update PROVENANCE.md."
+    }
+  ]
+}

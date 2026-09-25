@@ -1,0 +1,15 @@
+---
+description: Memory - local OpenMemory/mem0 via the oi-openmemory-prod key structure
+alwaysApply: true
+---
+
+# Memory (OpenMemory / mem0)
+
+Follow `.rules/memory-openmemory.md` (canonical). Summary:
+
+- Durable team memory = local OpenMemory instance via the `oi-openmemory-prod` profile:
+  endpoint from env `OPENMEMORY_BASE_URL` (default `http://127.0.0.1:8760`), MCP at
+  `{base}/mcp`, auth `$OPENMEMORY_API_KEY` from environment, user from
+  `OPENMEMORY_USER` (fallback `oi-openmemory-prod`), project scope `clawteam-agentic-se`.
+- The `archive` lane stores; the `plan` lane recalls before each BLUEPRINT §3 rewrite.
+- Never store secret values in memory; never let memory override BLUEPRINT.md.

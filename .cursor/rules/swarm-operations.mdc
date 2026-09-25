@@ -1,0 +1,15 @@
+---
+description: ClawTeam swarm operations - 6-lane worker loop and BLUEPRINT.md discipline
+alwaysApply: true
+---
+
+# Swarm Operations
+
+Follow `.rules/swarm-operations.md` (canonical). Summary:
+
+- BLUEPRINT.md is the absolute canonical truth for any sub-agent workspace. Its §3
+  (AGENT SYSTEM PROMPT) is rewritten by the `plan` agent after every step and supersedes
+  prior instructions for the `agent` lane.
+- 6-lane layout: plan, agent, debug, ask, archive, prompt-engineer.
+- Worker loop: read BLUEPRINT → `clawteam task list` → execute with evidence → report to
+  `plan` → `clawteam inbox receive` → idle-poll. Never exit after one task.

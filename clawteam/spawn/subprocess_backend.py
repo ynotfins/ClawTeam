@@ -163,6 +163,20 @@ class SubprocessBackend(SpawnBackend):
             command=list(final_command),
         )
 
+        # Emit AfterWorkerSpawn event (mirrors tmux backend; enables user hooks)
+        try:
+            from clawteam.events.global_bus import get_event_bus
+            from clawteam.events.types import AfterWorkerSpawn
+            get_event_bus().emit(AfterWorkerSpawn(
+                team_name=team_name,
+                agent_name=agent_name,
+                agent_id=agent_id,
+                backend="subprocess",
+                target=f"pid={process.pid}",
+            ))
+        except Exception:
+            pass
+
         return f"Agent '{agent_name}' spawned as subprocess (pid={process.pid})"
 
     def list_running(self) -> list[dict[str, str]]:

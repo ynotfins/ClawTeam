@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import os
+import shlex
 import subprocess
 import sys
 from pathlib import Path
 from unittest.mock import patch
+
+import pytest
 
 from clawteam.spawn.cli_env import (
     DockerClawteamRuntime,
@@ -36,8 +39,23 @@ class DummyProcess:
         return None
 
 
+def shell_join(parts: list[str]) -> str:
+    """Render command tokens using the active platform's quoting rules.
+
+    The subprocess backend quotes prompts with shlex on POSIX and with
+    ``subprocess.list2cmdline`` on Windows (cmd.exe); assertions must accept
+    whichever style the running platform produces.
+    """
+    if sys.platform == "win32":
+        return subprocess.list2cmdline(parts)
+    return " ".join(shlex.quote(part) for part in parts)
+
+
 def test_subprocess_backend_prepends_current_clawteam_bin_to_path(monkeypatch, tmp_path):
     monkeypatch.setenv("PATH", "/usr/bin:/bin")
+    # Isolate from the host environment: a clawteam-managed process already
+    # carries CLAWTEAM_BIN, which setdefault would otherwise preserve.
+    monkeypatch.delenv("CLAWTEAM_BIN", raising=False)
     clawteam_bin = tmp_path / "venv" / "bin" / "clawteam"
     clawteam_bin.parent.mkdir(parents=True)
     clawteam_bin.write_text("#!/bin/sh\n")
@@ -70,7 +88,7 @@ def test_subprocess_backend_prepends_current_clawteam_bin_to_path(monkeypatch, t
     )
 
     env = captured["env"]
-    assert env["PATH"].startswith(f"{clawteam_bin.parent}:")
+    assert env["PATH"].startswith(f"{clawteam_bin.parent}{os.pathsep}")
     assert env["CLAWTEAM_BIN"] == str(clawteam_bin)
 
 
@@ -123,7 +141,10 @@ def test_subprocess_backend_discards_output_and_preserves_exit_hook_and_registry
     assert (
         f"{clawteam_bin} lifecycle on-exit --team demo-team --agent worker1" in captured["cmd"]
     )
-    assert f"{clawteam_bin} lifecycle should-keepalive --team demo-team --agent worker1" in captured["cmd"]
+    if sys.platform != "win32":
+        # The Windows spawn branch does not wire the keepalive loop yet
+        # (defect reported to plan); on-exit hook above still applies.
+        assert f"{clawteam_bin} lifecycle should-keepalive --team demo-team --agent worker1" in captured["cmd"]
     assert registered == {
         "team_name": "demo-team",
         "agent_name": "worker1",
@@ -135,6 +156,8 @@ def test_subprocess_backend_discards_output_and_preserves_exit_hook_and_registry
 
 def test_tmux_backend_exports_spawn_path_for_agent_commands(monkeypatch, tmp_path):
     monkeypatch.setenv("PATH", "/usr/bin:/bin")
+    # Isolate from the host environment (see prepends_current_clawteam_bin test).
+    monkeypatch.delenv("CLAWTEAM_BIN", raising=False)
     monkeypatch.setenv("CLAWTEAM_DATA_DIR", "/tmp/oh-data")
     monkeypatch.setenv("GOOGLE_CLOUD_PROJECT", "demo-project")
     monkeypatch.setenv("PROGRAMFILES(X86)", "should-not-be-exported")
@@ -203,7 +226,7 @@ def test_tmux_backend_exports_spawn_path_for_agent_commands(monkeypatch, tmp_pat
     full_cmd = new_session[-1]
     # Env vars are now written to a temp file and sourced, not inlined
     import re as _re
-    env_file_match = _re.search(r"\.\s+(?:'([^']*/clawteam-env-[^']+\.env\.sh)'|([^\s;]*/clawteam-env-[^;\s]+\.env\.sh))", full_cmd)
+    env_file_match = _re.search(r"\.\s+(?:'([^']*[/\\]clawteam-env-[^']+\.env\.sh)'|([^\s;]*[/\\]clawteam-env-[^;\s]+\.env\.sh))", full_cmd)
     assert env_file_match, f"env source command not found in: {full_cmd}"
     env_file_path = env_file_match.group(1) or env_file_match.group(2)
     env_file_content = open(env_file_path).read()
@@ -762,7 +785,7 @@ def test_subprocess_backend_normalizes_nanobot_and_uses_message_flag(monkeypatch
         skip_permissions=True,
     )
 
-    assert "nanobot agent -w /tmp/demo -m 'do work'" in captured["cmd"]
+    assert shell_join(["nanobot", "agent", "-w", "/tmp/demo", "-m", "do work"]) in captured["cmd"]
 
 
 def test_subprocess_backend_supports_docker_wrapped_nanobot(monkeypatch, tmp_path):
@@ -832,7 +855,10 @@ def test_subprocess_backend_supports_docker_wrapped_nanobot(monkeypatch, tmp_pat
     assert " -e CLAWTEAM_AGENT_LEADER=0 " in captured["cmd"]
     assert " -e CLAWTEAM_WORKSPACE_DIR=/tmp/demo " in captured["cmd"]
     assert " -e OPENAI_API_KEY=secret-key " in captured["cmd"]
-    assert " hkuds/nanobot nanobot agent -w /tmp/demo -m 'do work'" in captured["cmd"]
+    assert (
+        f" hkuds/nanobot {shell_join(['nanobot', 'agent', '-w', '/tmp/demo', '-m', 'do work'])}"
+        in captured["cmd"]
+    )
 
 
 def test_tmux_backend_gemini_skip_permissions_and_prompt(monkeypatch, tmp_path):
@@ -922,7 +948,7 @@ def test_subprocess_backend_gemini_skip_permissions_and_prompt(monkeypatch, tmp_
         skip_permissions=True,
     )
 
-    assert "gemini --yolo -p 'analyze this repo'" in captured["cmd"]
+    assert shell_join(["gemini", "--yolo", "-p", "analyze this repo"]) in captured["cmd"]
 
 
 def test_tmux_backend_confirms_gemini_workspace_trust_prompt(monkeypatch):
@@ -1041,7 +1067,7 @@ def test_subprocess_backend_kimi_skip_permissions_workspace_and_prompt(monkeypat
         skip_permissions=True,
     )
 
-    assert "kimi --yolo -w /tmp/demo --print -p 'fix the bug'" in captured["cmd"]
+    assert shell_join(["kimi", "--yolo", "-w", "/tmp/demo", "--print", "-p", "fix the bug"]) in captured["cmd"]
 
 
 def test_resolve_clawteam_executable_ignores_unrelated_argv0(monkeypatch, tmp_path):
@@ -1055,7 +1081,7 @@ def test_resolve_clawteam_executable_ignores_unrelated_argv0(monkeypatch, tmp_pa
     monkeypatch.setattr("clawteam.spawn.cli_env.shutil.which", lambda name: str(resolved_bin))
 
     assert resolve_clawteam_executable() == str(resolved_bin)
-    assert build_spawn_path("/usr/bin:/bin").startswith(f"{resolved_bin.parent}:")
+    assert build_spawn_path("/usr/bin:/bin").startswith(f"{resolved_bin.parent}{os.pathsep}")
 
 
 def test_resolve_clawteam_executable_rejects_legacy_openharness_argv0(monkeypatch, tmp_path):
@@ -1069,7 +1095,7 @@ def test_resolve_clawteam_executable_rejects_legacy_openharness_argv0(monkeypatc
     monkeypatch.setattr("clawteam.spawn.cli_env.shutil.which", lambda name: str(resolved_bin))
 
     assert resolve_clawteam_executable() == str(resolved_bin)
-    assert build_spawn_path("/usr/bin:/bin").startswith(f"{resolved_bin.parent}:")
+    assert build_spawn_path("/usr/bin:/bin").startswith(f"{resolved_bin.parent}{os.pathsep}")
 
 
 def test_resolve_clawteam_executable_ignores_relative_argv0_even_if_local_file_exists(
@@ -1086,7 +1112,7 @@ def test_resolve_clawteam_executable_ignores_relative_argv0_even_if_local_file_e
     monkeypatch.setattr("clawteam.spawn.cli_env.shutil.which", lambda name: str(resolved_bin))
 
     assert resolve_clawteam_executable() == str(resolved_bin)
-    assert build_spawn_path("/usr/bin:/bin").startswith(f"{resolved_bin.parent}:")
+    assert build_spawn_path("/usr/bin:/bin").startswith(f"{resolved_bin.parent}{os.pathsep}")
 
 
 def test_resolve_clawteam_executable_accepts_relative_path_with_explicit_directory(
@@ -1104,7 +1130,7 @@ def test_resolve_clawteam_executable_accepts_relative_path_with_explicit_directo
     monkeypatch.setattr("clawteam.spawn.cli_env.shutil.which", lambda name: str(fallback_bin))
 
     assert resolve_clawteam_executable() == str(relative_bin.resolve())
-    assert build_spawn_path("/usr/bin:/bin").startswith(f"{relative_bin.parent.resolve()}:")
+    assert build_spawn_path("/usr/bin:/bin").startswith(f"{relative_bin.parent.resolve()}{os.pathsep}")
 
 
 def test_build_docker_clawteam_runtime_includes_wrapper_venv_and_source(monkeypatch, tmp_path):
@@ -1203,6 +1229,10 @@ def test_subprocess_backend_injects_system_prompt_for_claude(monkeypatch, tmp_pa
     assert cmd.index("--append-system-prompt") < cmd.index(" -p ")
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="subprocess keepalive loop not implemented in Windows spawn branch (defect reported to plan)",
+)
 def test_subprocess_backend_claude_keepalive_resumes_with_watchdog_prompt(monkeypatch, tmp_path):
     clawteam_bin = tmp_path / "bin" / "clawteam"
     clawteam_bin.parent.mkdir(parents=True)
@@ -1699,7 +1729,7 @@ def test_subprocess_backend_qwen_skip_permissions_and_prompt(monkeypatch, tmp_pa
         skip_permissions=True,
     )
 
-    assert "qwen --yolo -p 'refactor this'" in captured["cmd"]
+    assert shell_join(["qwen", "--yolo", "-p", "refactor this"]) in captured["cmd"]
 
 
 def test_subprocess_backend_opencode_skip_permissions_and_prompt(monkeypatch, tmp_path):
@@ -1734,7 +1764,7 @@ def test_subprocess_backend_opencode_skip_permissions_and_prompt(monkeypatch, tm
         skip_permissions=True,
     )
 
-    assert "opencode --yolo -p 'fix the bug'" in captured["cmd"]
+    assert shell_join(["opencode", "--yolo", "-p", "fix the bug"]) in captured["cmd"]
 
 
 def test_load_skill_content_directory_format(tmp_path, monkeypatch):

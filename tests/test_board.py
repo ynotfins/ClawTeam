@@ -377,3 +377,85 @@ def test_board_ui_escapes_attacker_controlled_fields():
     assert "option.textContent =" in html
     assert "document.getElementById('ui-meta').innerText =" in html
     assert "`${t.name || ''}${t.description ? ` - ${t.description}` : ''}`" in html
+
+
+def test_rgds_assets_are_vendored_and_linked():
+    """RGDS (@r3lentless/rgds-web) is the board's design system: the published
+    dist assets must be vendored, provenance-locked, and linked before the
+    board stylesheet."""
+    import json
+
+    rgds_dir = Path("clawteam/board/static/rgds")
+    for asset in ("tokens.css", "interaction.css", "components.css",
+                  "animations.css", "form-factor.css", "package.json", "PROVENANCE.md"):
+        assert (rgds_dir / asset).is_file(), f"missing vendored RGDS asset: {asset}"
+
+    pkg = json.loads((rgds_dir / "package.json").read_text(encoding="utf-8"))
+    theme = json.loads(Path("design/theme.tokens.json").read_text(encoding="utf-8"))
+    provenance = (rgds_dir / "PROVENANCE.md").read_text(encoding="utf-8")
+    assert pkg["name"] == "@r3lentless/rgds-web"
+    # Version invariant: package, domain layer, and provenance must agree.
+    assert pkg["version"] == theme["rgds"]["version"]
+    assert pkg["version"] in provenance
+    assert theme["rgds"]["figma_file_key"] == "KbhSAUCrADaqhxOm7jM2FC"
+
+    html = Path("clawteam/board/static/index.html").read_text(encoding="utf-8")
+    first_style = html.index("<style>")
+    for link in ("/rgds/tokens.css", "/rgds/interaction.css",
+                 "/rgds/components.css", "/rgds/animations.css", "/rgds/form-factor.css"):
+        assert link in html[:first_style], f"{link} must be linked before the board <style>"
+
+    tokens_css = (rgds_dir / "tokens.css").read_text(encoding="utf-8")
+    for mode in ("primary-light", "secondary-light", "primary-dark", "secondary-dark"):
+        assert f':root[data-theme="{mode}"]' in tokens_css, f"RGDS mode missing: {mode}"
+
+
+def test_board_ui_has_no_color_literals():
+    """Zero-hardcoding law: the board UI carries no color literals at all.
+    The only permitted oklch()/hex literals are RGDS's own published scrim
+    fallback, mirrored verbatim from rgds components.css inside var() defaults."""
+    import re
+
+    html = Path("clawteam/board/static/index.html").read_text(encoding="utf-8")
+    assert not re.search(r"#[0-9a-fA-F]{3,8}\b", html), "hex color literal in board UI"
+    assert not re.search(r"\brgba?\(", html), "rgb()/rgba() literal in board UI"
+    oklch_sites = [m.start() for m in re.finditer(r"oklch\(", html)]
+    scrim_fallback = "var(--md-sys-color-scrim, oklch(0% 0 0 / 0.48))"
+    expected_prefix = scrim_fallback[:scrim_fallback.index("oklch(")]
+    for site in oklch_sites:
+        assert html[html.rfind("var(", 0, site):site] == expected_prefix, (
+            "oklch literal outside the RGDS scrim var() fallback")
+
+
+def test_board_ui_rainbow_is_stroke_only():
+    """Dynamic stroke law: any background using var(--stroke-gradient) as a
+    border-box layer must sit under an opaque padding-box fill — a translucent
+    fill lets the rainbow bleed into the box interior (forbidden fill)."""
+    import re
+
+    html = Path("clawteam/board/static/index.html").read_text(encoding="utf-8")
+    decls = re.findall(r"background:\s*[^;{}]+;", html)
+    offenders = [d for d in decls if "var(--stroke-gradient)" in d and "transparent" in d]
+    assert not offenders, (
+        "rainbow bleed: stroke-gradient backgrounds with translucent fills: "
+        + " || ".join(offenders))
+
+
+def test_theme_tokens_json_is_rgds_domain_layer():
+    """design/theme.tokens.json must be the RGDS domain layer: RGDS mode ids,
+    var() references only, and no color values or NFA overlay remnants."""
+    import json
+    import re
+
+    theme = json.loads(Path("design/theme.tokens.json").read_text(encoding="utf-8"))
+    assert theme["$schema"] == "clawteam-board-theme/2"
+    assert set(theme["modes"]) == {"primary-light", "secondary-light",
+                                   "primary-dark", "secondary-dark"}
+    assert theme["rgds"]["package"] == "@r3lentless/rgds-web"
+    assert "nfa" not in json.dumps(theme), "NFA overlay must not survive in the domain layer"
+    for mode in theme["modes"].values():
+        for token, value in mode.get("tokens", {}).items():
+            assert isinstance(value, str) and value.startswith("var(--"), (
+                f"domain token {token} must be a var() reference, got {value!r}")
+    assert set(theme["legacyModeMap"]) == {"light-google", "light-orange",
+                                           "dark-speakeasy", "dark-orange"}

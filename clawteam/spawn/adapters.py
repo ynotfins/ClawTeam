@@ -49,8 +49,8 @@ class NativeCliAdapter:
         if skip_permissions:
             # Claude Code rejects --dangerously-skip-permissions when running
             # as root/sudo.  Detect this and silently omit the flag so spawned
-            # agents can still start.
-            _is_root = os.getuid() == 0
+            # agents can still start.  (Windows has no os.getuid; never root.)
+            _is_root = hasattr(os, "getuid") and os.getuid() == 0
             if is_claude_command(normalized_command) and not _is_root:
                 final_command.append("--dangerously-skip-permissions")
             elif is_codex_command(normalized_command):

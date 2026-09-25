@@ -1,0 +1,55 @@
+{
+  "name": "@r3lentless/rgds-web",
+  "version": "1.1.0",
+  "description": "R3lentless-Grind Design System \u2014 web (CSS + React) adapter",
+  "license": "UNLICENSED",
+  "type": "module",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/rgds-web.js",
+  "module": "./dist/rgds-web.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/rgds-web.js"
+    },
+    "./tokens.css": "./dist/tokens.css",
+    "./interaction.css": "./dist/interaction.css",
+    "./components.css": "./dist/components.css",
+    "./animations.css": "./dist/animations.css",
+    "./form-factor.css": "./dist/form-factor.css",
+    "./package.json": "./package.json"
+  },
+  "peerDependencies": {
+    "react": "^18.3.1 || ^19.0.0",
+    "react-dom": "^18.3.1 || ^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.12",
+    "@types/react-dom": "18.3.1",
+    "@vitejs/plugin-react": "4.3.4",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "typescript": "5.6.3",
+    "vite": "5.4.11",
+    "vitest": "2.1.8"
+  },
+  "scripts": {
+    "build": "vite build && tsc -p tsconfig.declarations.json && node ../../tools/copy-css-into-dist.mjs",
+    "test": "vitest run --environment node",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "pack:release": "node ../../tools/pack-release.mjs",
+    "check:parity": "node ../../tools/parity-check.mjs",
+    "check:exports": "node ../../tools/check-web-exports.mjs",
+    "validate": "node ../../tools/validate-all.mjs && node ../../tools/parity-check.mjs && node ../../tools/cold-adopt-sim.mjs"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "types": "./dist/index.d.ts"
+}

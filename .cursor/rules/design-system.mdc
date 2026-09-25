@@ -1,0 +1,19 @@
+---
+description: Global design system - 4-token theme system, no hardcoded colors anywhere
+alwaysApply: true
+---
+
+# Design System
+
+Follow `.rules/design-system.md` (canonical). Summary:
+
+- Theme modes live ONLY in `design/theme.tokens.json`:
+  `light-google` (Google palette: blue primary, red secondary, green/orange/pink/yellow),
+  `light-orange` (light+dark orange, blue/green accents, yellow card strokes),
+  `dark-speakeasy` (dark, rainbow strokes, live animated background),
+  `dark-orange` (deep black, orange pair, blue/green accents, yellow card/button strokes).
+- NEVER hardcode colors, gradients, radii, shadows, spacing, or font values at component
+  level — CSS variables / tokens only, including inline styles, Tailwind arbitrary values,
+  SVG fills, and chart configs.
+- Visual language: clean white space, large icons, card components, light drop shadows,
+  tight vector look.
