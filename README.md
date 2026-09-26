@@ -21,6 +21,22 @@
   <a href="https://github.com/HKUDS/.github/blob/main/profile/README.md"><img src="https://img.shields.io/badge/WeChat-Group-C5EAB4?style=flat&logo=wechat&logoColor=white" alt="WeChat"></a>
 </p>
 
+> ---
+>
+> ## 🖥️ This fork: the deployed Control-Plane product
+>
+> This branch carries a production deployment of ClawTeam as a **Windows-native
+> developer control-plane** — a multi-agent autonomous runtime plus a
+> Multimedia Studio (image/video generation, reusable characters) on the
+> R3lentless-Grind Design System, with a local ComfyUI GPU tier and KIE.ai
+> cloud providers behind an app-owned boundary.
+>
+> **Deployment docs**: [Handoff](docs/HANDOFF.md) · [Architecture](docs/ARCHITECTURE.md) ·
+> [Operator manual (BOOTSTRAP)](BOOTSTRAP.md) · [Operations](docs/OPERATIONS.md) ·
+> [Media Studio guide](docs/MEDIA_STUDIO.md) · [Changelog](CHANGELOG.md)
+>
+> ---
+
 **One Command Line: Full Automation.** — agents spawn swarms, delegate tasks, and deliver results. 
 
 Human provides the goal. The Agent Team orchestrates everything else.

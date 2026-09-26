@@ -3,6 +3,10 @@
 ClawTeam "2. Agentic Software Engineering" swarm on Windows 11 Pro — fully native,
 no Docker, invisible background execution. This document is the operator's manual.
 
+**Doc set**: [Architecture](docs/ARCHITECTURE.md) · [Operations & recovery](docs/OPERATIONS.md) ·
+[Media Studio guide](docs/MEDIA_STUDIO.md) · [Engineering handoff](docs/HANDOFF.md) ·
+[Changelog](CHANGELOG.md) · design law: [`.rules/design-system.md`](.rules/design-system.md)
+
 ---
 
 ## 1. What is installed where

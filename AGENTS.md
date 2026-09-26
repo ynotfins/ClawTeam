@@ -20,4 +20,5 @@ You are operating inside a ClawTeam 6-lane agentic software engineering swarm
 - Never exit after one task — poll for more work (`clawteam task list`, `clawteam inbox receive`).
 - No hardcoded style values in any deliverable. No secret values anywhere, ever.
 - Evidence or it didn't happen: completed tasks cite test output or artifact paths.
+- Product docs live in `docs/` (ARCHITECTURE, OPERATIONS, MEDIA_STUDIO, HANDOFF); read `docs/AGENTS`-relevant ones before touching those systems.
 - Runtime: Windows 11 native, subprocess backend, headless background execution.
