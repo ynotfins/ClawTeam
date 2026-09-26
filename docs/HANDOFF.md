@@ -69,12 +69,33 @@ cloud badge.
    you want the zone tidy.
 2. **True 3D assets (Lane B)**: no provider wired; the boundary already
    supports adding one (adapter + kind + pricing entry) without UI changes.
-3. **Enhance/upscale lane**: UI present; needs an upscale model (local
-   upscale_models/ is empty — adding one is a ComfyUI change needing approval)
-   or a cloud adapter.
+3. **Enhance/upscale lane**: UI present; needs a provider choice (researched
+   2026-09-26, not implemented — operator picks):
+   **(a) Local ComfyUI** — `RealESRGAN_x2plus.pth` + `RealESRGAN_x4plus.pth`
+   are **already installed** in
+   `D:\ComfyUI\ComfyUI_windows_portable\ComfyUI\models\upscale_models\` (the
+   old "empty" note is stale). $0/image, private, seconds on the 4070 SUPER;
+   work = an `upscale` workflow in `comfyui_local.py` (repo code only — no
+   ComfyUI-side change, no model download). Classic ESRGAN quality.
+   **(b) KIE cloud `recraft/crisp-upscale`** — same jobs API as the existing
+   adapters (`POST createTask`, model id `recraft/crisp-upscale`, input
+   `{image: <public URL>}` — the photo lane covers input hosting); spec's
+   illustrative cost ~1 credit (~$0.005)/image.
+   **(c) KIE cloud `topaz/image-upscale`** — model id `topaz/image-upscale`,
+   input `{image_url, upscale_factor: '1'|'2'|'4'}`; spec's illustrative cost
+   ~10 credits (~$0.05)/image (premium quality). Cloud prices are
+   estimates-only until a live task reports `creditsConsumed`.
+   Decision owned by Tony; do not implement before the choice.
 4. **Device-identity assertions** for headless agent DB writes — gateway-side
    policy; proposals only (control-plane governance).
 5. SwarmRecall scheduled tasks remain disabled (start manually when needed).
+   Proposal (2026-09-26, no action taken): **stay documented-manual** — the
+   deliberate shutdown-time disable should hold until the pending WS3.3 work
+   lands (it may change how the service starts, and nothing in the
+   control-plane product depends on port 3300 being up). Re-enable as part of
+   WS3.3, or earlier if recall is wanted ad hoc (one-time
+   `Enable-ScheduledTask` on SwarmRecallApi + SwarmRecallMeilisearch —
+   loopback-only, no cloud spend).
 
 ## 5. Environment & secrets
 
