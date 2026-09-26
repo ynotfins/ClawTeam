@@ -8,6 +8,8 @@ services are loopback-bound unless noted.
 | Service | Port | Starts | Stop |
 |---|---|---|---|
 | **ClawTeam board** | 8788 | manual (below) | kill PID on 8788 |
+| Photo host (temp public photo links) | 18790 | thread inside the board process (auto) | dies with the board |
+| Photo tunnel (photos.miaknuckles.com → 18790) | — | `Start-Board.ps1` → `Start-PhotoTunnel.ps1` (idempotent) | kill PID in `.clawteam-local\run\photo-tunnel.pid` |
 | OpenClaw Gateway | 18789 | Scheduled Task `OpenClaw Gateway` (auto) | CLI `gateway restart` (NOT Restart-ScheduledTask) |
 | bifrost (LLM/MCP) | 8080 | its own autostart | — leave alone |
 | ComfyUI (local media tier) | 8188 | auto-booted hidden by the media router on first local job (~30 s) | dies with PC; safe to kill |
@@ -58,6 +60,13 @@ restart needed to pick it up). Health: Media tab cloud badge, or
 **Local lane gates failed**: ComfyUI auto-boot only works if
 `D:\ComfyUI\ComfyUI_windows_portable` + checkpoint exist. Health detail names
 the failed gate. Check `comfyui-bridge.log` in that folder.
+
+**Photo link expired / unreachable**: uploads live in `~/.clawteam/media/uploads/`
+with a 24 h TTL (`~/.clawteam/media/photohost.json`). The photo host rides in
+the board process (18790) and the public route is the `clawteam-photos`
+cloudflared tunnel (`~/.cloudflared/clawteam-photos.yml`); both come up with
+`Start-Board.ps1`. Re-upload the photo if the link expired — expired reads
+return 410 and the sweep deletes the files.
 
 **AnyClaw disconnected**: force-stop + relaunch `com.claw.control` on the
 phone (`adb shell am force-stop com.claw.control` then monkey-launch). It

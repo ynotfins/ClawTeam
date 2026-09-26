@@ -1,6 +1,7 @@
 # ClawTeam Control-Plane — Engineering Handoff
 
-> State as of **2026-09-24**. Owner: Tony (ynotfins). This document is the
+> State as of **2026-09-26** (photo-upload lane added; baseline doc was
+> 2026-09-24). Owner: Tony (ynotfins). This document is the
 > single entry point for any engineer or agent taking over this project.
 
 ## 1. What this project is
@@ -34,7 +35,8 @@ sit behind an app-owned boundary — the UI never talks to them directly.
 | KIE video lane | Live 5 s/720p MP4 (runway, **12 credits actual**) |
 | Recovery laws | download-failure state + retry re-polls task (no double charge) — proven live twice |
 | Characters | Full E2E: portrait → canonical → variant → animated scene (32 credits); mid-stage resume across a board restart proven live |
-| Tests | **616 passed, 2 skipped** (`--basetemp=.clawteam-local/pytest-tmp` on this machine) |
+| Photo upload (self-hosted) | Characters upload → temporary public https link on own domain (`photos.miaknuckles.com`, cloudflared `clawteam-photos` → 18790) → KIE character "Test Maya" (10 credits, balance 26→16) — proven live 2026-09-26; 24 h auto-expiry + sweep |
+| Tests | **636 passed, 2 skipped** (`--basetemp=.clawteam-local/pytest-tmp` on this machine; was 616 / 2 at the 2026-09-24 baseline) |
 
 KIE balance at handoff: **26 credits (~$0.13)**. Balance shows in the Media
 cloud badge.
@@ -52,12 +54,19 @@ cloud badge.
 
 ## 4. Open decisions & known gaps (owned by Tony)
 
-1. **Photo upload for Characters** (decision pending, Tony decides):
-   official KIE has *no* upload API (all paths probed = 404). Options:
-   (a) third-party community host `kieai.redpandaai.co` (trust boundary), or
-   (b) self-hosted temporary public link on the operator's own domain
-   (cloudflared) with auto-expiry. Until then, character creation needs a
-   public https photo link.
+1. **Photo upload for Characters** — **RESOLVED 2026-09-26: option (b),
+   self-hosted**. Implemented + verified live (see §2). Photos get a
+   temporary public https link on the operator's own domain
+   (`photos.miaknuckles.com` → cloudflared tunnel `clawteam-photos` →
+   loopback photo host 18790); 24 h auto-expiry; the photo host is the only
+   publicly reachable process. Machine-local artifacts (not in the repo):
+   `~/.clawteam/media/photohost.json`, `~/.cloudflared/clawteam-photos.yml`
+   + tunnel credentials, DNS record `photos.miaknuckles.com`.
+   *Cleanup note:* one stray DNS record was created while probing the CLI's
+   zone handling — `photos.4axe.com` inside the miaknuckles.com Cloudflare
+   zone (unreachable: no TLS cert at that depth; harmless). cloudflared has
+   no record-delete command; delete it once in the Cloudflare dashboard if
+   you want the zone tidy.
 2. **True 3D assets (Lane B)**: no provider wired; the boundary already
    supports adding one (adapter + kind + pricing entry) without UI changes.
 3. **Enhance/upscale lane**: UI present; needs an upscale model (local
@@ -80,7 +89,7 @@ reference keys by name; nothing stores values. Ports and services:
 1. Read `BOOTSTRAP.md` top-to-bottom (§6b–6f cover this product's additions).
 2. Start the board (`OPERATIONS.md` daily commands) and click through every
    view — ten minutes makes the rest of the docs concrete.
-3. Run the suite; 616 green is the baseline. Anything red is a regression you
+3. Run the suite; 636 green is the baseline. Anything red is a regression you
    introduced or a discovery worth writing down.
 4. Branch from `feat/dev-control-plane-multimedia-studio`; the suite + the
    design law are the gates. Push to `fork`.

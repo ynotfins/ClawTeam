@@ -1150,10 +1150,17 @@
             <div id="media-characters" class="nfa-tabpane" style="display:none;">
                 <div class="nfa-surface">
                     <div class="nfa-toolbar"><h3 class="nfa-title">Create Character</h3></div>
-                    <p class="nfa-muted" style="margin-bottom:10px;">From one photo link, build a reusable animated-film character (3D-look stylized imagery, identity preserved - not a true 3D model). ~10 credits.</p>
+                    <p class="nfa-muted" style="margin-bottom:10px;">From one photo, build a reusable animated-film character (3D-look stylized imagery, identity preserved - not a true 3D model). ~10 credits.</p>
                     <div class="tools-grid" style="grid-template-columns: 2fr 1fr auto; gap:10px; align-items:end;">
                         <div><label class="nfa-label">Photo link (public https URL)</label>
-                            <input type="text" id="char-source" class="nfa-input" placeholder="https://…/photo.jpg"></div>
+                            <input type="text" id="char-source" class="nfa-input" placeholder="https://…/photo.jpg">
+                            <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap;">
+                                <button class="nfa-btn nfa-btn-secondary" onclick="pickPhotoFile(event)">Upload a photo…</button>
+                                <input type="file" id="char-photo-file" accept="image/jpeg,image/png,image/webp" style="display:none;" onchange="uploadPhotoFile(event)">
+                                <img id="char-photo-preview" alt="uploaded photo preview" style="display:none;width:44px;height:44px;object-fit:cover;border-radius:8px;">
+                                <span class="nfa-muted" id="char-upload-note">Self-hosted: your photo gets a temporary public link on your own domain (auto-expires).</span>
+                            </div>
+                        </div>
                         <div><label class="nfa-label">Character name</label>
                             <input type="text" id="char-name" class="nfa-input" placeholder="e.g. Maya"></div>
                         <button class="nfa-btn nfa-btn-primary" onclick="createCharacter(event)">Create Character</button>
@@ -1898,6 +1905,37 @@
         loadMediaJobs(); mediaTab('jobs');
     }
 
+    // ---- Self-hosted photo upload (temporary public link on own domain) ----
+    function pickPhotoFile(ev) {
+        ev.preventDefault();
+        document.getElementById('char-photo-file').click();
+    }
+
+    async function uploadPhotoFile(ev) {
+        const file = ev.target.files && ev.target.files[0];
+        ev.target.value = '';
+        if (!file) return;
+        const note = document.getElementById('char-upload-note');
+        if (file.size > 20 * 1024 * 1024) { note.textContent = 'photo exceeds the 20 MB cap'; return; }
+        note.textContent = 'uploading ' + file.name + '…';
+        try {
+            const res = await fetch('/api/media/uploads?filename=' + encodeURIComponent(file.name), {
+                method: 'POST',
+                headers: { 'Content-Type': file.type || 'application/octet-stream' },
+                body: file,
+            });
+            const data = await res.json();
+            if (data.status === 'error') { note.textContent = data.error; return; }
+            const up = data.upload || {};
+            document.getElementById('char-source').value = up.url || '';
+            const img = document.getElementById('char-photo-preview');
+            img.src = up.local_url || ''; img.style.display = 'inline-block';
+            note.textContent = 'uploaded - temporary public link ready (expires ' + (up.expires_at || 'unknown') + ')';
+        } catch (e) {
+            note.textContent = 'upload failed: ' + e;
+        }
+    }
+
     async function charVariantPrompt(cid, name) {
         const ask = prompt('New look for ' + name + ' - describe pose, clothing, expression, place, or camera angle:');
         if (!ask || !ask.trim()) return;
@@ -1922,6 +1960,7 @@
     }
     window.loadCharacters = loadCharacters; window.createCharacter = createCharacter;
     window.charVariantPrompt = charVariantPrompt; window.animateCharacter = animateCharacter;
+    window.pickPhotoFile = pickPhotoFile; window.uploadPhotoFile = uploadPhotoFile;
 
     window.mediaTab = mediaTab; window.mediaSubmit = mediaSubmit; window.refreshMediaEstimate = refreshMediaEstimate;
     window.retryJob = retryJob; window.reuseAsset = reuseAsset; window.mediaToggleAuto = mediaToggleAuto;

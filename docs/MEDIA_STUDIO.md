@@ -34,10 +34,11 @@ Built for the goal: *photos of a person → a stylized character → consistent
 images → scenes → movies* — while being honest that this is **stylized
 3D-looking imagery (Lane A), not true 3D models (Lane B, future provider)**.
 
-1. **Create Character** — paste a public https photo link + name. Two
-   identity-preserving passes run automatically: *sculpt* (3D animated-film
-   render) → *stylize* (big-studio movie character). ~10 credits. The finished
-   canonical image anchors the character.
+1. **Create Character** — upload a photo from disk (or paste any public
+   https photo link) + name. Two identity-preserving passes run
+   automatically: *sculpt* (3D animated-film render) → *stylize* (big-studio
+   movie character). ~10 credits. The finished canonical image anchors the
+   character.
 2. **New look…** — describe pose, clothing, expression, place, or camera
    angle. Every variant is generated from the canonical with an enforced
    "same character, keep identity exactly consistent" wrapper. ~5 credits.
@@ -48,9 +49,18 @@ Variants and scenes stack on the character card; every asset is in the
 Library for reuse. A multi-shot "movie" = several scenes from one character —
 identity is maintained because every generation references the same canonical.
 
-**Photo input today** requires a public https URL (the official KIE API has no
-upload endpoint). Personal-photo upload is a pending product decision — see
-`HANDOFF.md` §4.
+**Photo input (self-hosted, operator decision 2026-09-26)**: the Characters
+tab uploads a personal photo through the board (`POST /api/media/uploads`)
+into `~/.clawteam/media/uploads/` under an unguessable token, and serves it
+as a **temporary public https link on the operator's own domain**
+(`https://photos.miaknuckles.com/<token>.<ext>` via a dedicated cloudflared
+tunnel → loopback photo host on 18790). Links auto-expire after 24 h —
+expired reads return 410 and a sweep (every 15 min inside the media worker)
+deletes the files. The photo host serves *only* token-named image files;
+the board API and every other service stay loopback-only. Photos transit the
+operator's own Cloudflare edge, never a third-party upload host. Verified
+E2E live: upload → public fetch (byte-identical through the edge) → KIE
+character creation (10 credits).
 
 ## Routing & cost model
 

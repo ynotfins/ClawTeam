@@ -44,6 +44,10 @@ $HostAddr = if ($env:CLAWTEAM_BOARD_HOST) { $env:CLAWTEAM_BOARD_HOST } else { '1
 $boardPid = Start-HiddenScript -ScriptPath $board -WorkingDirectory $Repo
 Set-Content -LiteralPath (Join-Path $RunDir 'board.pid') -Value $boardPid
 
+# Photo lane: temporary public photo links (self-hosted, cloudflared) ride with
+# the board session — idempotent, silent no-op when the tunnel is not configured.
+try { & (Join-Path $PSScriptRoot 'Start-PhotoTunnel.ps1') } catch { Write-Warning "photo tunnel: $_" }
+
 if ($External) {
     # Get-NetIPAddress uses a CIM class that is missing/broken on some systems
     # ("Invalid class" 0x41010); fall back to DNS resolution when it fails.

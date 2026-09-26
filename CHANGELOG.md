@@ -4,6 +4,41 @@ Product-level log for **this deployment** (the Windows-native developer
 control-plane on the ClawTeam framework). Framework changes from upstream
 HKUDS remain in git history and upstream docs. Dates are 2026.
 
+## [0.3.0-product.4] — 2026-09-26 — Self-hosted photo lane for Characters
+
+### Added
+- **Photo upload with temporary public links** (operator decision: option b,
+  self-hosted — no third-party upload host): Characters tab → "Upload a
+  photo…" → `POST /api/media/uploads` (raw image body, magic-byte sniffed,
+  20 MB cap, jpg/png/webp) → token-named file in `~/.clawteam/media/uploads/`
+  → served at `https://photos.miaknuckles.com/<token>.<ext>` through a
+  dedicated cloudflared tunnel (`clawteam-photos`) to the loopback photo host.
+- `clawteam/media/uploads.py` (`UploadStore`: unguessable tokens, 24 h TTL
+  config, lazy expiry + 15-min sweep inside the media worker) and
+  `clawteam/media/photohost.py` (the ONLY publicly reachable process — serves
+  token-named image files exclusively; board + all other services stay
+  loopback-only).
+- Board routes: `GET/POST /api/media/uploads`, `GET /api/media/uploads/<t>/file`;
+  UI upload button + preview + expiry note (RGDS classes only).
+- `scripts/windows/Start-PhotoTunnel.ps1` (idempotent; started with the board)
+  and machine-local config `~/.clawteam/media/photohost.json` (no secrets).
+- 20 new tests (`tests/test_photohost.py`: store, sniff, expiry/sweep,
+  traversal guards, photo host 404/410 behavior, board routes, worker sweep).
+  Suite: **636 passed / 2 skipped** (was 616 / 2).
+
+### Verified live (2026-09-26)
+- Public link fetch is byte-identical through the Cloudflare edge; unknown
+  tokens 404 publicly.
+- Full E2E: local-GPU portrait (free) → upload → public link → KIE character
+  **"Test Maya"** (sculpt + stylize, exactly 10 credits; balance 26 → 16) →
+  canonical asset in the library.
+
+### Notes
+- The cloudflared CLI on this machine can only write DNS in the miaknuckles.com
+  zone (its cert scope), hence `photos.miaknuckles.com` rather than a 4axe.com
+  hostname; one unreachable stray DNS record (`photos.4axe.com` inside the
+  miaknuckles zone) was left by the probe and can be deleted in the dashboard.
+
 ## [0.3.0-product.3] — 2026-09-24 — Characters, docs, push
 
 ### Added

@@ -557,6 +557,7 @@ class BoardHandler(BaseHTTPRequestHandler):
     interval: float = 2.0
     team_cache: TeamSnapshotCache
     media_router: "object | None" = None
+    upload_store: "object | None" = None
 
     def do_GET(self):
         path = self.path.split("?")[0]
@@ -606,6 +607,21 @@ class BoardHandler(BaseHTTPRequestHandler):
         elif path == "/api/media/characters" and self.media_router:
             from clawteam.media.characters import CharacterStore
             self._serve_json({"characters": CharacterStore().list()})
+        elif path == "/api/media/uploads" and self.upload_store:
+            self._serve_json({"uploads": self.upload_store.list()})
+        elif path.startswith("/api/media/uploads/") and path.endswith("/file") and self.upload_store:
+            token = path[len("/api/media/uploads/"):][:-len("/file")]
+            hit = self.upload_store.read_bytes(token)
+            if hit is None:
+                self.send_error(404, "unknown or expired upload")
+                return
+            record, data = hit
+            self.send_response(200)
+            self.send_header("Content-Type", record.get("mime", "application/octet-stream"))
+            self.send_header("Content-Length", str(len(data)))
+            self.send_header("Cache-Control", "private, max-age=60")
+            self.end_headers()
+            self.wfile.write(data)
         elif path.startswith("/api/media/assets/") and path.endswith("/file") and self.media_router:
             asset_id = path[len("/api/media/assets/"):][:-len("/file")]
             record = self.media_router.assets.get(asset_id)
@@ -687,6 +703,39 @@ class BoardHandler(BaseHTTPRequestHandler):
                 self._serve_json({"status": "error", "error": str(e)})
                 return
             self._serve_json(result)
+            return
+
+        if path == "/api/media/uploads":
+            # Raw binary image body (?filename=photo.jpg); NOT the JSON media API.
+            from clawteam.media.uploads import ALLOWED_EXT, MAX_UPLOAD_BYTES, UploadStore
+            content_length = int(self.headers.get("Content-Length", 0))
+            if content_length <= 0:
+                self._serve_json({"status": "error", "error": "empty upload"})
+                return
+            if content_length > MAX_UPLOAD_BYTES:
+                self._serve_json({"status": "error",
+                                  "error": f"upload exceeds {MAX_UPLOAD_BYTES // (1024 * 1024)} MB cap"})
+                return
+            ext = Path((parse_qs(urlparse(self.path).query).get("filename", [""])[0] or "")).suffix.lower()
+            if ext not in ALLOWED_EXT:
+                self._serve_json({"status": "error",
+                                  "error": f"unsupported image type {ext or '(none)'} "
+                                           f"(allowed: {', '.join(sorted(ALLOWED_EXT))})"})
+                return
+            body = self.rfile.read(content_length)
+            try:
+                record = UploadStore().save(body, ext=ext,
+                                            original_name=parse_qs(urlparse(self.path).query)
+                                            .get("filename", [""])[0])
+            except ValueError as e:
+                self._serve_json({"status": "error", "error": str(e)})
+                return
+            if record.get("url") is None:
+                self._serve_json({"status": "error",
+                                  "error": "photo saved locally, but no public origin is configured "
+                                           "(media/photohost.json public_origin)"})
+                return
+            self._serve_json({"status": "ok", "upload": record})
             return
 
         if path.startswith("/api/media/") and self.media_router:
@@ -938,6 +987,18 @@ def serve(
     from clawteam.media.router import MediaRouter
     BoardHandler.media_router = MediaRouter()
     BoardHandler.media_router.start()
+
+    # Photo lane (operator decision 2026-09-26, option b): uploads live in
+    # ~/.clawteam/media/uploads and the loopback photo host is the only thing
+    # the public cloudflared hostname may reach. Board up = photo lane up.
+    from clawteam.media.uploads import UploadStore, photohost_config
+    from clawteam.media.photohost import start_photohost
+    BoardHandler.upload_store = UploadStore()
+    cfg = photohost_config()
+    try:
+        start_photohost(port=cfg["port"], uploads=BoardHandler.upload_store)
+    except OSError as e:
+        print(f"photo host not started (port {cfg['port']}): {e}")
 
     server = ThreadingHTTPServer((host, port), BoardHandler)
     try:

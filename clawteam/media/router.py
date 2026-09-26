@@ -29,6 +29,7 @@ POLL_FAST_TICKS = 10
 POLL_GROWTH = 1.5
 POLL_MAX_INTERVAL = 30.0
 CLOUD_MIN_SUBMIT_SPACING = 5.0
+UPLOAD_SWEEP_INTERVAL = 900.0  # expired photo links: sweep every 15 min
 
 
 class MediaRouter:
@@ -117,9 +118,14 @@ class MediaRouter:
         self._stop.set()
 
     def _run(self) -> None:
+        next_sweep = 0.0
         while not self._stop.is_set():
             try:
                 self._tick()
+                if time.monotonic() >= next_sweep:
+                    from clawteam.media.uploads import UploadStore
+                    UploadStore().sweep()
+                    next_sweep = time.monotonic() + UPLOAD_SWEEP_INTERVAL
             except Exception:
                 traceback.print_exc()
             self._stop.wait(1.0)

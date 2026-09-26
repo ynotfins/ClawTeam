@@ -149,7 +149,8 @@ Goal-oriented flow in the Media panel's **Characters** tab (Lane A - stylized
 3D-LOOKING imagery; NOT a true 3D mesh - true-3D providers attach later behind
 the same provider boundary):
 
-1. **Create Character** - photo link (public https URL) + name -> two
+1. **Create Character** - upload a photo (self-hosted temporary public link,
+   see the note below) or paste any public https link + name -> two
    identity-preserving kontext edits: *sculpt* (3D animated-film render)
    -> *stylize* (big-studio movie character). Actual cost: 10 credits
    (5+5, verified live). The canonical image lands in the character record +
@@ -172,12 +173,23 @@ Live proof (2026-09-23): portrait -> "Maya" canonical -> red-jacket waving
 variant -> animated wave scene; all assets served from the library; 32
 credits total. KIE balance visible in the Media cloud badge.
 
-Photo-upload note: the official KIE API has NO file-upload endpoint (probed:
-/api/v1/common/upload and variants = 404; community clients use a third-party
-host). Character creation therefore takes a public https photo link. Options
-for personal photos require an operator trust decision: (a) the community
-upload host, or (b) a self-hosted public URL route (e.g. temporary link on
-the operator's own domain). Do not wire either without explicit approval.
+Photo-upload note (RESOLVED 2026-09-26, operator chose the self-hosted path):
+the official KIE API has NO file-upload endpoint (probed: /api/v1/common/upload
+and variants = 404). Personal photos now go through the **self-hosted
+temporary-link lane**: Characters tab → "Upload a photo…" → board saves the
+photo under an unguessable token in `~/.clawteam/media/uploads/` and serves it
+at a temporary public https URL on the operator's own domain —
+`https://photos.miaknuckles.com/<token>.<ext>` (dedicated cloudflared tunnel
+`clawteam-photos` → loopback photo host on 18790, config
+`~/.cloudflared/clawteam-photos.yml`; started with the board by
+`scripts\windows\Start-PhotoTunnel.ps1`). Links auto-expire after 24 h
+(expired reads → 410; a 15-min sweep inside the media worker deletes files);
+the photo host serves ONLY token-named image files — the board and every
+other service stay loopback-only. Machine config (no secrets):
+`~/.clawteam/media/photohost.json` (`public_origin` / `port` / `ttl_hours`).
+Verified E2E live 2026-09-26: upload → public fetch byte-identical through the
+Cloudflare edge → character "Test Maya" (10 credits). Pasting any public
+https photo link still works.
 
 ## 6e. KIE.ai cloud media lane — VERIFIED LIVE (2026-09-23)
 
