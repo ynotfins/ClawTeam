@@ -89,13 +89,21 @@ joining the project.
 | 8787 | openclaw ingest path (via tailscale serve) |
 | 8788 | **ClawTeam board** (manual start) |
 | 18789 | OpenClaw gateway (scheduled task, auto) |
+| 18790 | **photo host** (thread inside the board process — the only process the public photo hostname may reach) |
 | 3300 | SwarmRecall (scheduled tasks currently disabled) |
 | 55433 / 65432 | AgentCore PG18 / SwarmRecall PG16 (loopback) |
 
+Public surface law: exactly one product hostname is publicly reachable —
+`photos.miaknuckles.com` (cloudflared tunnel `clawteam-photos` → loopback
+18790), serving only unexpired, token-named image files. Everything else,
+including the board API, is loopback-only.
+
 ## 6. Test & verification
 
-- `pytest` — 616 passed / 2 skipped (upstream platform skips) at time of writing.
-  On this machine use `--basetemp=.clawteam-local/pytest-tmp` (stale junction
-  breaker). Media suite (`tests/test_media.py`) covers lifecycle, gates,
-  adapters (mocked HTTP), backoff, character pipeline, and recovery paths.
+- `pytest` — 640 passed / 2 skipped (upstream platform skips) at time of writing
+  (photo lane + animate-from-variant included). On this machine use
+  `--basetemp=.clawteam-local/pytest-tmp` (stale junction breaker). Media
+  suite (`tests/test_media.py`, `tests/test_photohost.py`) covers lifecycle,
+  gates, adapters (mocked HTTP), backoff, character pipeline, photo upload /
+  expiry / traversal guards, and recovery paths.
 - Live verification record per capability: see `HANDOFF.md` §2.

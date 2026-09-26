@@ -68,6 +68,18 @@ cloudflared tunnel (`~/.cloudflared/clawteam-photos.yml`); both come up with
 `Start-Board.ps1`. Re-upload the photo if the link expired — expired reads
 return 410 and the sweep deletes the files.
 
+**Known DNS junk (delete in the dashboard when convenient)**: while probing
+the cloudflared CLI's zone handling on 2026-09-26, a stray record
+`photos.4axe.com` was created *inside the miaknuckles.com Cloudflare zone*
+(FQDN `photos.4axe.com.miaknuckles.com`, reported as pointing at the
+`cloud-mia` tunnel). It is unreachable junk — universal SSL covers only one
+label under `*.miaknuckles.com`, so no TLS cert exists at that depth and no
+browser or provider can fetch it. cloudflared cannot delete DNS records and
+this machine holds no Cloudflare API token, so cleanup is a one-click delete
+of the `photos.4axe.com` record in the miaknuckles.com zone via the dashboard.
+The working photo hostname is `photos.miaknuckles.com` (tunnel
+`clawteam-photos`); nothing depends on the stray record.
+
 **AnyClaw disconnected**: force-stop + relaunch `com.claw.control` on the
 phone (`adb shell am force-stop com.claw.control` then monkey-launch). It
 reconnects through the tailscale serve path.

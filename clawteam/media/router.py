@@ -394,9 +394,10 @@ class MediaRouter:
                                                  prompt=job.get("prompt", ""))
             if job.get("kind") == "i2v" and (job.get("params") or {}).get("character_id"):
                 cid = job["params"]["character_id"]
+                params = job.get("params") or {}
                 CharacterStore().add_scene(cid, asset_id=saved[0],
                                            prompt=job.get("prompt", ""),
-                                           source=(job.get("params") or {}).get("source_url") or "canonical")
+                                           source=params.get("source") or params.get("source_url") or "canonical")
             self.jobs.update(job["id"], state="succeeded",
                              output_asset_ids=saved, completed_at=time.strftime("%Y-%m-%dT%H:%M:%S"),
                              error=("partial download: " + "; ".join(errors)) if errors else None)

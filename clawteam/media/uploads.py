@@ -28,11 +28,12 @@ from clawteam.media.jobs import media_dir
 # What the public lane may ever serve: still images only.
 ALLOWED_EXT = {".jpg": "image/jpeg", ".jpeg": "image/jpeg",
                ".png": "image/png", ".webp": "image/webp"}
-MAX_UPLOAD_BYTES = 20 * 1024 * 1024  # matches the board-side cap
+MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 DEFAULT_TTL_HOURS = 24.0
 DEFAULT_PORT = 18790
 
-# pho-<epoch-seconds>-<8+ hex>.<ext> — the photohost serves exactly this shape.
+# pho-<epoch-seconds>-<hex>.<ext> — the photohost serves exactly this shape.
+# Token payload = a full uuid4 (128 bits) — capability-style, unguessable.
 TOKEN_RE = re.compile(r"^pho-\d{10,}-[0-9a-f]{8,}$")
 
 # Magic bytes per allowed type — an upload must actually be the image it claims.
@@ -97,7 +98,7 @@ class UploadStore:
             raise ValueError(f"unsupported image type {ext} (allowed: {', '.join(sorted(ALLOWED_EXT))})")
         if not _sniffs_as(data, ext):
             raise ValueError("file content does not match a supported image format")
-        token = f"pho-{int(time.time())}-{uuid.uuid4().hex[:12]}"
+        token = f"pho-{int(time.time())}-{uuid.uuid4().hex}"
         binary = uploads_dir() / f"{token}{ext}"
         tmp = binary.with_suffix(".tmp")
         tmp.write_bytes(data)

@@ -10,7 +10,7 @@ HKUDS remain in git history and upstream docs. Dates are 2026.
 - **Photo upload with temporary public links** (operator decision: option b,
   self-hosted — no third-party upload host): Characters tab → "Upload a
   photo…" → `POST /api/media/uploads` (raw image body, magic-byte sniffed,
-  20 MB cap, jpg/png/webp) → token-named file in `~/.clawteam/media/uploads/`
+  10 MB cap, jpg/png/webp) → token-named file in `~/.clawteam/media/uploads/`
   → served at `https://photos.miaknuckles.com/<token>.<ext>` through a
   dedicated cloudflared tunnel (`clawteam-photos`) to the loopback photo host.
 - `clawteam/media/uploads.py` (`UploadStore`: unguessable tokens, 24 h TTL
@@ -22,9 +22,17 @@ HKUDS remain in git history and upstream docs. Dates are 2026.
   UI upload button + preview + expiry note (RGDS classes only).
 - `scripts/windows/Start-PhotoTunnel.ps1` (idempotent; started with the board)
   and machine-local config `~/.clawteam/media/photohost.json` (no secrets).
-- 20 new tests (`tests/test_photohost.py`: store, sniff, expiry/sweep,
-  traversal guards, photo host 404/410 behavior, board routes, worker sweep).
-  Suite: **636 passed / 2 skipped** (was 616 / 2).
+- **Animate-from-variant** (delivers the documented "or a variant" promise):
+  clicking a look thumbnail on a character card re-hosts that variant's
+  library asset through the photo lane (fresh temp public link — provider
+  URLs expire) and animates from it; the scene registers to the character
+  with `source: "variant"`.
+- **Scene thumbnails**: scenes play inline on the character card (click to
+  play/pause) — the card now shows the full looks + scenes story.
+- 24 new tests (`tests/test_photohost.py`: store, sniff, expiry/sweep,
+  traversal guards, photo host 404/410 behavior, board routes, worker sweep,
+  variant re-host, scene source labels).
+  Suite: **640 passed / 2 skipped** (was 616 / 2).
 
 ### Verified live (2026-09-26)
 - Public link fetch is byte-identical through the Cloudflare edge; unknown
@@ -32,6 +40,13 @@ HKUDS remain in git history and upstream docs. Dates are 2026.
 - Full E2E: local-GPU portrait (free) → upload → public link → KIE character
   **"Test Maya"** (sculpt + stylize, exactly 10 credits; balance 26 → 16) →
   canonical asset in the library.
+- Expiry enforcement live: a 5-second-TTL upload served 200 (`Cache-Control:
+  no-store`) and returned **410 through the public edge** after its TTL.
+  (Pre-fix links created while `max-age=3600` was active may serve from edge
+  cache up to ~1 h past expiry; all links minted after the fix are no-store.)
+- Animate-from-variant live: Maya's existing look was re-hosted through the
+  photo lane server-side and animated — 12 credits, scene registered with
+  `source: "variant"` (balance 16 → 4), 1.5 MB MP4 in the library.
 
 ### Notes
 - The cloudflared CLI on this machine can only write DNS in the miaknuckles.com

@@ -36,7 +36,7 @@ sit behind an app-owned boundary — the UI never talks to them directly.
 | Recovery laws | download-failure state + retry re-polls task (no double charge) — proven live twice |
 | Characters | Full E2E: portrait → canonical → variant → animated scene (32 credits); mid-stage resume across a board restart proven live |
 | Photo upload (self-hosted) | Characters upload → temporary public https link on own domain (`photos.miaknuckles.com`, cloudflared `clawteam-photos` → 18790) → KIE character "Test Maya" (10 credits, balance 26→16) — proven live 2026-09-26; 24 h auto-expiry + sweep |
-| Tests | **636 passed, 2 skipped** (`--basetemp=.clawteam-local/pytest-tmp` on this machine; was 616 / 2 at the 2026-09-24 baseline) |
+| Tests | **640 passed, 2 skipped** (`--basetemp=.clawteam-local/pytest-tmp` on this machine; was 616 / 2 at the 2026-09-24 baseline) |
 
 KIE balance at handoff: **26 credits (~$0.13)**. Balance shows in the Media
 cloud badge.

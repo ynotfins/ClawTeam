@@ -1868,7 +1868,9 @@
                     ? `<img src="/api/media/assets/${encodeURIComponent(c.canonical_asset_id)}/file" alt="${escapeHtml(c.name)}">`
                     : `<div style="padding:40px 12px;text-align:center;" class="nfa-muted">building…</div>`;
                 const variantThumbs = (c.variants || []).slice(0, 4).map((v) =>
-                    `<img src="/api/media/assets/${encodeURIComponent(v.asset_id)}/file" style="width:44px;height:44px;border-radius:8px;object-fit:cover;margin-right:4px;" title="${escapeHtml(v.prompt.slice(0, 60))}">`).join('');
+                    `<img src="/api/media/assets/${encodeURIComponent(v.asset_id)}/file" style="width:44px;height:44px;border-radius:8px;object-fit:cover;margin-right:4px;cursor:pointer;" title="${escapeHtml((v.prompt || '').slice(0, 60))} — click to animate this look" onclick="animateCharacter('${escapeHtml(c.id)}', '${escapeHtml(c.name)}', '${escapeHtml(v.asset_id)}')">`).join('');
+                const sceneThumbs = (c.scenes || []).slice(0, 4).map((s) =>
+                    `<video src="/api/media/assets/${encodeURIComponent(s.asset_id)}/file" muted preload="metadata" style="width:44px;height:44px;border-radius:8px;object-fit:cover;margin-right:4px;" title="${escapeHtml((s.prompt || '').slice(0, 60))}" onclick="this.paused ? this.play() : this.pause()"></video>`).join('');
                 const sceneCount = (c.scenes || []).length;
                 cell.innerHTML = `
                     ${canonical}
@@ -1876,7 +1878,8 @@
                         <span>${escapeHtml(c.name)} · ${(c.variants || []).length} looks · ${sceneCount} scenes</span>
                     </div>
                     <div style="padding:8px 10px;">
-                        ${variantThumbs ? `<div style="margin-bottom:8px;">${variantThumbs}</div>` : ''}
+                        ${variantThumbs ? `<div style="margin-bottom:8px;"><span class="nfa-muted">Looks (click to animate):</span><div style="margin-top:4px;">${variantThumbs}</div></div>` : ''}
+                        ${sceneThumbs ? `<div style="margin-bottom:8px;"><span class="nfa-muted">Scenes (click to play):</span><div style="margin-top:4px;">${sceneThumbs}</div></div>` : ''}
                         <div style="display:flex;gap:6px;flex-wrap:wrap;">
                             <button class="nfa-mini" onclick="charVariantPrompt('${escapeHtml(c.id)}', '${escapeHtml(c.name)}')">New look…</button>
                             <button class="nfa-mini" onclick="animateCharacter('${escapeHtml(c.id)}', '${escapeHtml(c.name)}')">Animate</button>
@@ -1916,7 +1919,7 @@
         ev.target.value = '';
         if (!file) return;
         const note = document.getElementById('char-upload-note');
-        if (file.size > 20 * 1024 * 1024) { note.textContent = 'photo exceeds the 20 MB cap'; return; }
+        if (file.size > 10 * 1024 * 1024) { note.textContent = 'photo exceeds the 10 MB cap'; return; }
         note.textContent = 'uploading ' + file.name + '…';
         try {
             const res = await fetch('/api/media/uploads?filename=' + encodeURIComponent(file.name), {
@@ -1947,13 +1950,15 @@
         loadMediaJobs(); mediaTab('jobs');
     }
 
-    async function animateCharacter(cid, name) {
-        const ask = prompt('Animate ' + name + ' - what should happen in the shot? (e.g. "she smiles and waves hello")');
+    async function animateCharacter(cid, name, variantAssetId) {
+        const which = variantAssetId ? ' this look of' : ' ';
+        const ask = prompt('Animate' + which + ' ' + name + ' - what should happen in the shot? (e.g. "she smiles and waves hello")');
         if (ask === null) return;
         const shot = ask.trim() || 'comes to life with a warm smile and a friendly wave, cinematic animated-movie quality';
+        const params = { character_id: cid, duration: 5, quality: '720p' };
+        if (variantAssetId) params.variant_asset_id = variantAssetId;
         const result = await toolsPost('/api/media/jobs', {
-            kind: 'i2v', prompt: shot,
-            params: { character_id: cid, duration: 5, quality: '720p' },
+            kind: 'i2v', prompt: shot, params,
         });
         if (result.status === 'error') return alert(result.error);
         loadMediaJobs(); mediaTab('jobs');

@@ -769,6 +769,37 @@ class BoardHandler(BaseHTTPRequestHandler):
                         if not (payload.get("params") or {}).get("name"):
                             self._serve_json({"status": "error", "error": "character name required"})
                             return
+                    if payload.get("kind") == "i2v" and (payload.get("params") or {}).get("variant_asset_id"):
+                        # Animate-from-variant: re-host the chosen variant's library
+                        # asset through the self-hosted photo lane (fresh temp public
+                        # link — provider URLs expire), then animate from that URL.
+                        from clawteam.media.characters import CharacterStore
+                        from clawteam.media.uploads import UploadStore
+                        params = payload["params"]
+                        vaid = params.pop("variant_asset_id")
+                        rec = CharacterStore().get(params.get("character_id") or "")
+                        variant = next((v for v in ((rec or {}).get("variants") or [])
+                                        if v.get("asset_id") == vaid), None)
+                        asset = router.assets.get(vaid) if variant else None
+                        data = router.assets.read_bytes(vaid) if variant else None
+                        if variant is None or asset is None or data is None:
+                            self._serve_json({"status": "error",
+                                              "error": "unknown variant for this character"})
+                            return
+                        try:
+                            up = UploadStore().save(data, ext=asset.get("ext") or ".png",
+                                                    original_name="variant")
+                        except ValueError as e:
+                            self._serve_json({"status": "error",
+                                              "error": "variant re-host failed: " + str(e)})
+                            return
+                        if not up.get("url"):
+                            self._serve_json({"status": "error",
+                                              "error": "photo saved locally, but no public origin is "
+                                       "configured (media/photohost.json public_origin)"})
+                            return
+                        params["source_url"] = up["url"]
+                        params["source"] = "variant"
                     job = router.jobs.new_job(
                         kind=payload.get("kind", ""),
                         prompt=payload.get("prompt", ""),

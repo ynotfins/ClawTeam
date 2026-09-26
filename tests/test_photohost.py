@@ -124,8 +124,12 @@ class TestPhotoHost:
     def test_serves_live_upload(self, photo_server):
         server, uploads = photo_server
         rec = uploads.save(PNG_BYTES, ext=".png")
-        status, body = self._fetch(server, f"/{rec['token']}.png")
-        assert status == 200 and body == PNG_BYTES
+        port = server.server_address[1]
+        with urllib.request.urlopen(
+                f"http://127.0.0.1:{port}/{rec['token']}.png", timeout=5) as r:
+            assert r.status == 200 and r.read() == PNG_BYTES
+            # expiry must cut off new fetches: never cache at the edge
+            assert r.headers["Cache-Control"] == "no-store"
 
     def test_serves_webp_with_correct_mime(self, photo_server):
         server, uploads = photo_server
@@ -235,6 +239,204 @@ class TestBoardUploadRoute:
         handler.do_GET()
         assert handler.wfile.getvalue() == PNG_BYTES
         assert not errors
+
+
+class TestAnimateFromVariant:
+    """i2v with variant_asset_id re-hosts the library asset through the photo
+    lane (fresh self-hosted temp link) and labels the scene 'variant'."""
+
+    class _FakeMediaRouter:
+        def __init__(self, assets, jobs):
+            self.assets = assets
+            self.jobs = jobs
+
+        def plan(self, job):
+            return {"provider": "kie", "model": "runway",
+                    "estimate": {"credits": 12.0, "usd": 0.06,
+                                 "pricing_table_version": "t/1", "verified": False}}
+
+    @staticmethod
+    def _character_with_variant(tmp_path):
+        from clawteam.media.characters import CharacterStore
+        from clawteam.media.assets import AssetStore
+        assets = AssetStore(tmp_path)
+        rec = assets.save(PNG_BYTES, kind="image", ext=".png")
+        cs = CharacterStore()
+        char = cs.new(name="Maya", source_url="https://x/p.jpg")
+        cs.attach_canonical(char["id"], asset_id="ast-c", url="https://x/canon.png")
+        cs.add_variant(char["id"], asset_id=rec["id"], url="https://x/v.png",
+                       prompt="red jacket")
+        return cs, char["id"], rec["id"], assets
+
+    @staticmethod
+    def _post_jobs(handler, body):
+        import json as _json
+        raw = _json.dumps(body).encode("utf-8")
+        handler.path = "/api/media/jobs"
+        handler.headers = {"Content-Length": str(len(raw))}
+        handler.rfile = io.BytesIO(raw)
+        handler.do_POST()
+
+    def test_post_i2v_variant_rehosts_through_photo_lane(self, isolated_data_dir, tmp_path):
+        write_config(isolated_data_dir)
+        from clawteam.board.server import BoardHandler
+        from clawteam.media.jobs import MediaJobStore
+        cs, cid, vaid, assets = self._character_with_variant(tmp_path)
+        router = self._FakeMediaRouter(assets, MediaJobStore(tmp_path))
+        handler = object.__new__(BoardHandler)
+        served = {}
+        handler._serve_json = lambda data: served.setdefault("data", data)
+        handler.media_router = router
+        self._post_jobs(handler, {"kind": "i2v", "prompt": "waves hello",
+                                  "params": {"character_id": cid,
+                                             "variant_asset_id": vaid,
+                                             "duration": 5, "quality": "720p"}})
+        assert served["data"]["status"] == "ok"
+        params = served["data"]["job"]["params"]
+        assert params["source_url"].startswith("https://photos.example.com/pho-")
+        assert params["source"] == "variant"
+        assert "variant_asset_id" not in params
+        token = params["source_url"].rsplit("/", 1)[1].rsplit(".", 1)[0]
+        assert UploadStore().read_bytes(token)[1] == PNG_BYTES
+
+    def test_post_i2v_unknown_variant_rejected(self, isolated_data_dir, tmp_path):
+        write_config(isolated_data_dir)
+        from clawteam.board.server import BoardHandler
+        from clawteam.media.jobs import MediaJobStore
+        cs, cid, vaid, assets = self._character_with_variant(tmp_path)
+        router = self._FakeMediaRouter(assets, MediaJobStore(tmp_path))
+        handler = object.__new__(BoardHandler)
+        served = {}
+        handler._serve_json = lambda data: served.setdefault("data", data)
+        handler.media_router = router
+        self._post_jobs(handler, {"kind": "i2v", "prompt": "waves",
+                                  "params": {"character_id": cid,
+                                             "variant_asset_id": "ast-nope",
+                                             "duration": 5, "quality": "720p"}})
+        assert served["data"]["status"] == "error"
+        assert "unknown variant" in served["data"]["error"]
+
+    def test_i2v_scene_source_label_variant(self, isolated_data_dir, tmp_path):
+        from clawteam.media.router import MediaRouter
+        from clawteam.media.jobs import MediaJobStore
+        from clawteam.media.assets import AssetStore
+        from clawteam.media.characters import CharacterStore
+        from clawteam.media.providers.base import ProviderResult as R
+        cs = CharacterStore()
+        char = cs.new(name="Maya", source_url="https://x/p.jpg")
+        cs.attach_canonical(char["id"], asset_id="ast-c", url="https://x/canon.png")
+
+        class FakeLocal:
+            name = "comfyui-local"
+
+            def health(self):
+                return {"ok": False, "detail": "down", "gates": {}}
+
+            def capabilities(self):
+                return {"kinds": [], "models": [], "limits": {}}
+
+        class FakeCloudI2V:
+            name = "kie"
+
+            def capabilities(self):
+                return {"kinds": ["t2v", "i2v"],
+                        "models": [{"model": "runway", "kinds": ["t2v", "i2v"]}],
+                        "limits": {}, "dormant": False}
+
+            def health(self):
+                return {"ok": True, "detail": "live", "gates": {}}
+
+            def estimate(self, kind, model, params):
+                return {"credits": 12.0, "usd": 0.06, "pricing_table_version": "t/1",
+                        "verified": False}
+
+            def default_model_for(self, kind):
+                return "runway"
+
+            def submit(self, job, input_urls):
+                assert input_urls == ["https://photos.example.com/pho-x.png"]
+                return "task-i2v", "runway"
+
+            def poll(self, task_id, kind):
+                return R(state="succeeded", provider_status="success",
+                         output_urls=["https://x/scene.mp4"], actual_credits=12.0)
+
+            def download(self, url):
+                return b"VID", ".mp4"
+
+        r = MediaRouter(job_store=MediaJobStore(tmp_path), asset_store=AssetStore(tmp_path),
+                        local=FakeLocal(), cloud=FakeCloudI2V())
+        job = r.jobs.new_job("i2v", "she waves hello",
+                             params={"character_id": char["id"],
+                                     "source_url": "https://photos.example.com/pho-x.png",
+                                     "source": "variant"})
+        r.jobs.queue(job)
+        r._tick()
+        r._tick()
+        r._tick()
+        assert r.jobs.get(job["id"])["state"] == "succeeded"
+        scenes = cs.get(char["id"])["scenes"]
+        assert len(scenes) == 1
+        assert scenes[0]["source"] == "variant"
+
+    def test_i2v_scene_source_label_canonical_default(self, isolated_data_dir, tmp_path):
+        from clawteam.media.router import MediaRouter
+        from clawteam.media.jobs import MediaJobStore
+        from clawteam.media.assets import AssetStore
+        from clawteam.media.characters import CharacterStore
+        from clawteam.media.providers.base import ProviderResult as R
+        cs = CharacterStore()
+        char = cs.new(name="Ana", source_url="https://x/p.jpg")
+        cs.attach_canonical(char["id"], asset_id="ast-c", url="https://x/canon.png")
+
+        class FakeCloudCanonical:
+            name = "kie"
+
+            def capabilities(self):
+                return {"kinds": ["i2v"], "models": [{"model": "runway", "kinds": ["i2v"]}],
+                        "limits": {}, "dormant": False}
+
+            def health(self):
+                return {"ok": True, "detail": "live", "gates": {}}
+
+            def estimate(self, kind, model, params):
+                return {"credits": 12.0, "usd": 0.06, "pricing_table_version": "t/1"}
+
+            def default_model_for(self, kind):
+                return "runway"
+
+            def submit(self, job, input_urls):
+                assert input_urls == ["https://x/canon.png"]
+                return "task-i2v2", "runway"
+
+            def poll(self, task_id, kind):
+                return R(state="succeeded", provider_status="success",
+                         output_urls=["https://x/scene2.mp4"], actual_credits=12.0)
+
+            def download(self, url):
+                return b"VID", ".mp4"
+
+        class FakeLocalDown:
+            name = "comfyui-local"
+
+            def health(self):
+                return {"ok": False, "detail": "down", "gates": {}}
+
+            def capabilities(self):
+                return {"kinds": [], "models": [], "limits": {}}
+
+        r = MediaRouter(job_store=MediaJobStore(tmp_path), asset_store=AssetStore(tmp_path),
+                        local=FakeLocalDown(), cloud=FakeCloudCanonical())
+        job = r.jobs.new_job("i2v", "she smiles",
+                             params={"character_id": char["id"]})
+        r.jobs.queue(job)
+        r._tick()
+        r._tick()
+        r._tick()
+        assert r.jobs.get(job["id"])["state"] == "succeeded"
+        scenes = cs.get(char["id"])["scenes"]
+        assert len(scenes) == 1
+        assert scenes[0]["source"] == "canonical"
 
 
 class TestRouterSweepsExpiredUploads:
