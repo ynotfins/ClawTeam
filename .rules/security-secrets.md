@@ -10,7 +10,8 @@ the inherited environment at runtime. Nothing else.
 | `OPENROUTER_API_KEY` | LLM routing via OpenRouter (used by the `openrouter-claude` profile) |
 | `TWILIO_API_KEY` (+ SID vars when present) | Twilio messaging |
 | `SENDGRID_API_KEY` | SendGrid email |
-| `OPENMEMORY_API_KEY` | Local OpenMemory / mem0 (`oi-openmemory-prod`) |
+| `KIE_API_KEY` | kie.ai cloud media (image/video generation); if absent the cloud media lane is dormant |
+| `BIFROST_MCP_VIRTUAL_KEY` | Bearer token for the `agentcore-gateway` MCP server (local memory facade) |
 | `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` (when set) | Direct provider access |
 
 ## 2. Hard rules

@@ -58,7 +58,7 @@ Operating rules for this version:
 |---|---|
 | `.rules/design-system.md` | 4-token theme system, card/icon/shadow/whitespace styling for ALL generated output |
 | `.rules/security-secrets.md` | Secrets live ONLY in Windows environment variables |
-| `.rules/memory-openmemory.md` | OpenMemory / mem0 usage via the `oi-openmemory-prod` key structure |
+| `.rules/memory-local.md` | All-local memory policy: AgentCore facade via MCP, local files, loopback DBs |
 | `.rules/swarm-operations.md` | Worker loop, task/inbox protocol, blueprint discipline |
 
 ## §5 Design Token Contract (summary)
@@ -74,21 +74,24 @@ No color, radius, shadow, or spacing value may be hardcoded at any component lev
 
 ## §6 Secrets Policy (summary)
 
-Secrets (OPENROUTER_API_KEY, TWILIO_*, SENDGRID_API_KEY, OPENMEMORY_API_KEY, ...) exist only as
+Secrets (OPENROUTER_API_KEY, TWILIO_*, SENDGRID_API_KEY, KIE_API_KEY, ...) exist only as
 Windows environment variables. They are read at runtime from the inherited environment.
 They are never written to files, configs, logs, prompts, or code. See `.rules/security-secrets.md`.
 
 ## §7 Memory Policy (summary)
 
-Team memory is the local OpenMemory (mem0) instance, addressed through the
-`oi-openmemory-prod` profile (`.rules/memory-openmemory.md`). Facts that outlive a task
-get stored there by `archive`; recall happens before planning.
+All memory, storage, and databases are LOCAL on this machine (`.rules/memory-local.md`):
+team memory is the AgentCore memory facade, reached via MCP `agentcore-gateway`, with
+workspace state in plain local files and the canonical DB a loopback-only PostgreSQL
+instance. No OpenMemory/mem0, no Obsidian, no cloud memory service. Facts that outlive a
+task get stored there by `archive`; recall happens before planning.
 
 ## §8 Decision Log (append-only — `plan` maintains)
 
 | # | Date | Decision | Rationale |
 |---|------|----------|-----------|
 | 1 | 2026-09-15 | Bootstrap blueprint; 6-lane layout; subprocess backend on Windows | Operator requirement: native, no Docker, hidden windows |
+| 2 | 2026-10-02 | Aligned memory policy text to all-local (`.rules/memory-local.md`); added `ANCHOR_POINTS.md` | Pre-bootstrap hygiene, owner-authorized |
 
 ## §9 Definition of Done
 

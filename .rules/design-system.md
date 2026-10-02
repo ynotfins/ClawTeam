@@ -10,7 +10,9 @@ independent org system, not NFA-owned, not AgentCore-owned.
 
 - **Discovery**: `C:\Users\ynotf\.rgds\RGDS_MANIFEST.json` (always start there)
 - **Figma Team Library**: `R3lentless-Grind Design System — RGDS`, file `KbhSAUCrADaqhxOm7jM2FC`
-- **Web package**: `@r3lentless/rgds-web` (npm, currently 1.0.1)
+- **Web package**: `@r3lentless/rgds-web` — the version **vendored in this repo is 1.1.0**
+  (verified in `clawteam/board/static/rgds/PROVENANCE.md` and `design/theme.tokens.json`
+  `rgds.version`; npm publish of 1.1.0 is pending upstream per `PROVENANCE.md`)
 - **Consumed in this repo**: vendored at `clawteam/board/static/rgds/` with SHA-256
   provenance in `clawteam/board/static/rgds/PROVENANCE.md`
 

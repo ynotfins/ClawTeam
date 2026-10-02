@@ -36,7 +36,7 @@ sit behind an app-owned boundary — the UI never talks to them directly.
 | Recovery laws | download-failure state + retry re-polls task (no double charge) — proven live twice |
 | Characters | Full E2E: portrait → canonical → variant → animated scene (32 credits); mid-stage resume across a board restart proven live |
 | Photo upload (self-hosted) | Characters upload → temporary public https link on own domain (`photos.miaknuckles.com`, cloudflared `clawteam-photos` → 18790) → KIE character "Test Maya" (10 credits, balance 26→16) — proven live 2026-09-26; 24 h auto-expiry + sweep |
-| Tests | **640 passed, 2 skipped** (`--basetemp=.clawteam-local/pytest-tmp` on this machine; was 616 / 2 at the 2026-09-24 baseline) |
+| Tests | **639 passed, 2 skipped, 1 pre-existing failed** (`--basetemp=.clawteam-local/pytest-tmp` on this machine, re-measured 2026-10-02; was 616 / 2 at the 2026-09-24 baseline, 640 / 2 / 0 recorded 2026-09-26). The one failure (`tests/test_event_bus.py::TestHookManager::test_shell_hook`) is a pre-existing Windows gap — the hook runs `touch`, which does not exist on Windows `cmd.exe` — not caused by this hygiene pass; see `docs/HYGIENE_REPORT.md`. |
 
 KIE balance at handoff: **26 credits (~$0.13)**. Balance shows in the Media
 cloud badge.
@@ -110,8 +110,11 @@ reference keys by name; nothing stores values. Ports and services:
 1. Read `BOOTSTRAP.md` top-to-bottom (§6b–6f cover this product's additions).
 2. Start the board (`OPERATIONS.md` daily commands) and click through every
    view — ten minutes makes the rest of the docs concrete.
-3. Run the suite; 636 green is the baseline. Anything red is a regression you
-   introduced or a discovery worth writing down.
+3. Run the suite; **639 passed / 2 skipped / 1 pre-existing-failed is the baseline**
+   (re-measured 2026-10-02; see §2 and `docs/HYGIENE_REPORT.md` for the one known-red test
+   and why a single `pytest` invocation on this machine must be run in small file-group
+   batches — see `docs/HYGIENE_REPORT.md` "Environment note"). Anything newly red beyond
+   that one known test is a regression you introduced or a discovery worth writing down.
 4. Branch from `feat/dev-control-plane-multimedia-studio`; the suite + the
    design law are the gates. Push to `fork`.
 5. For the open items in §4, propose before building where they touch scope,

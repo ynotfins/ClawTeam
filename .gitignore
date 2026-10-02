@@ -19,3 +19,4 @@ rgds.bak-*/
 .pytest_cache/
 *.tmp
 .zcode/
+desktop.ini
