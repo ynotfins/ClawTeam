@@ -1996,13 +1996,43 @@
                 option.textContent = `${t.name || ''}${t.description ? ` - ${t.description}` : ''}`;
                 teamSelect.appendChild(option);
             });
-            
+            const newOption = document.createElement('option');
+            newOption.value = '__new_fullstack_commercial__';
+            newOption.textContent = 'New: Full-Stack Commercial (Autonomous)';
+            teamSelect.appendChild(newOption);
+
             if (teams.length > 0) {
                 teamSelect.value = teams[0].name;
                 switchTeam(teams[0].name);
             }
-            
-            teamSelect.addEventListener('change', (e) => switchTeam(e.target.value));
+
+            teamSelect.addEventListener('change', async (e) => {
+                if (e.target.value === '__new_fullstack_commercial__') {
+                    try {
+                        const res = await fetch('/api/team/create', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ template: 'fullstack-commercial' })
+                        });
+                        const data = await res.json();
+                        if (data.status === 'ok' && data.team) {
+                            await init();
+                            teamSelect.value = data.team;
+                            switchTeam(data.team);
+                        } else {
+                            console.error('Team create failed', data);
+                            window.alert(data.error || 'Team create failed');
+                            teamSelect.value = '';
+                        }
+                    } catch (err) {
+                        console.error('Team create failed', err);
+                        window.alert('Team create failed');
+                        teamSelect.value = '';
+                    }
+                    return;
+                }
+                switchTeam(e.target.value);
+            });
         } catch (e) {
             console.error("Failed to load overview", e);
             teamSelect.innerHTML = '<option value="">Error loading teams</option>';

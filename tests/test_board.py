@@ -459,3 +459,45 @@ def test_theme_tokens_json_is_rgds_domain_layer():
                 f"domain token {token} must be a var() reference, got {value!r}")
     assert set(theme["legacyModeMap"]) == {"light-google", "light-orange",
                                            "dark-speakeasy", "dark-orange"}
+
+
+def test_api_team_create_builds_fullstack_commercial_shell(monkeypatch, tmp_path: Path):
+    """WP1/AC-1: POST /api/team/create builds a template-backed team (no agent spawn)."""
+    import io
+    import json as _json
+
+    monkeypatch.setenv("CLAWTEAM_DATA_DIR", str(tmp_path))
+
+    def _post(payload: dict) -> dict:
+        handler = object.__new__(BoardHandler)
+        body = _json.dumps(payload)
+        handler.path = "/api/team/create"
+        handler.headers = {"Content-Length": str(len(body))}
+        handler.rfile = io.BytesIO(body.encode("utf-8"))
+        served: dict = {}
+        handler._serve_json = lambda data: served.setdefault("data", data)
+        handler.do_POST()
+        return served["data"]
+
+    out = _post({"template": "fullstack-commercial", "name": "fsc-shell"})
+    assert out["status"] == "ok"
+    assert out["team"] == "fsc-shell"
+
+    from clawteam.team.manager import TeamManager
+
+    team = TeamManager.get_team("fsc-shell")
+    assert team is not None
+    names = {m.name for m in team.members}
+    assert {"plan", "judge", "integrator", "fe-dev", "critic-code"} <= names
+
+    from clawteam.team.tasks import TaskStore
+
+    tasks = TaskStore("fsc-shell").list_tasks()
+    assert len(tasks) == 5
+    owners = {t.owner for t in tasks}
+    assert owners == {"plan", "ask", "architect", "qa", "security"}
+
+    # duplicate name errors cleanly, no crash
+    dup = _post({"template": "fullstack-commercial", "name": "fsc-shell"})
+    assert dup["status"] == "error"
+    assert "already exists" in dup["error"]

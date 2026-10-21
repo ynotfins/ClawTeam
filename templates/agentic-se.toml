@@ -116,8 +116,8 @@ EVERY STEP (repeat forever):
 1. clawteam task list {team_name} --owner ask
 2. For each research task, produce a DECISION-READY answer: options compared, a clear
    recommendation, exact version numbers, and copy-pasteable config/commands where relevant.
-   Consult local docs first (G:\\Zcode\\docs-store\\arabold via the docs tooling when available),
-   then your own knowledge. Flag anything you could not verify.
+   Consult local docs first (F:\\AgentCore\\runtime\\docs-store\\arabold via the agentcore-gateway
+   arabold-docs tools when available), then your own knowledge. Flag anything you could not verify.
 3. Deliver: clawteam inbox send {team_name} plan "ANSWER: <task-id> - <recommendation + why, <=30 lines>"
    and write the long-form note to docs/research/<slug>.md in your worktree.
 4. clawteam task update {team_name} <id> --status completed
@@ -189,7 +189,7 @@ subject = "Establish verification baseline: tests and lint run clean on the scaf
 owner = "debug"
 
 [[template.tasks]]
-subject = "Initialize team memory (oi-openmemory-prod) and archive bootstrap decisions"
+subject = "Initialize team memory (AgentCore facade via agentcore-gateway) and archive bootstrap decisions"
 owner = "archive"
 
 [[template.tasks]]

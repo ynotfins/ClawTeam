@@ -596,3 +596,54 @@ def test_spawn_cli_passes_repo_as_cwd_without_worktree_and_uses_repo_prompt(monk
     assert "Working directory: " + str(repo_path.resolve()) in call["prompt"]
     assert "Work directly in this repository path" in call["prompt"]
     assert "isolated git worktree" not in call["prompt"]
+
+
+def test_ship_cli_creates_team_and_run_record(monkeypatch, tmp_path):
+    """AC-2 (WP1): `clawteam ship "<prompt>"` creates team + run.json and exits 0."""
+    import json
+
+    monkeypatch.setenv("CLAWTEAM_DATA_DIR", str(tmp_path))
+    monkeypatch.chdir(tmp_path)
+    backend = RecordingBackend()
+    monkeypatch.setattr("clawteam.spawn.get_backend", lambda _: backend)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        app,
+        ["ship", "Build a full-stack todo app with auth", "--mode", "simple"],
+        env={"CLAWTEAM_DATA_DIR": str(tmp_path)},
+    )
+
+    assert result.exit_code == 0, result.output
+    from pathlib import Path
+
+    runs = list((Path.cwd() / ".clawteam-local" / "runs").glob("ship-*/run.json"))
+    assert runs, "ship should create .clawteam-local/runs/<run_id>/run.json"
+    record = json.loads(runs[0].read_text(encoding="utf-8"))
+    assert record["prompt"] == "Build a full-stack todo app with auth"
+    assert record["mode"] == "simple"
+    assert record["template"] == "fullstack-commercial"
+    # team + roster created from the fullstack-commercial template
+    assert TeamManager.get_team(record["team"]) is not None
+    members = sorted(m.name for m in TeamManager.get_team(record["team"]).members)
+    assert "judge" in members and "integrator" in members and "fe-dev" in members
+    # every template agent actually spawned through the backend
+    spawned_names = {call["agent_name"] for call in backend.calls}
+    assert "judge" in spawned_names and "integrator" in spawned_names and "fe-dev" in spawned_names
+
+
+def test_ship_cli_rejects_invalid_mode(monkeypatch, tmp_path):
+    monkeypatch.setenv("CLAWTEAM_DATA_DIR", str(tmp_path))
+    monkeypatch.chdir(tmp_path)
+    backend = RecordingBackend()
+    monkeypatch.setattr("clawteam.spawn.get_backend", lambda _: backend)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        app,
+        ["ship", "prompt", "--mode", "turbo"],
+        env={"CLAWTEAM_DATA_DIR": str(tmp_path)},
+    )
+
+    assert result.exit_code == 1
+    assert backend.calls == []

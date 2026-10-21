@@ -4215,6 +4215,80 @@ def launch_team(
     _output(out, _human)
 
 
+# ============================================================================
+# Ship Command (one-prompt product bootstrap — WP1)
+# ============================================================================
+
+@app.command("ship")
+def ship(
+    prompt: str = typer.Argument(..., help="Product prompt: one prompt in, shipped product out"),
+    mode: str = typer.Option("pro", "--mode", help="pro | simple (Keep It Simple defaults)"),
+    budget: Optional[str] = typer.Option(None, "--budget", help="Budget cap for the run (governor input)"),
+    no_fork: bool = typer.Option(False, "--no-fork", help="Disable fork exploration for this run"),
+    team: Optional[str] = typer.Option(None, "--team", "--team-name", "-t", help="Team name (default: ship-<run8>)"),
+    profile: Optional[str] = typer.Option(None, "--profile", help="Runtime profile (default: config default_profile)"),
+    backend: Optional[str] = typer.Option(None, "--backend", "-b", help="Spawn backend override"),
+    repo: Optional[str] = typer.Option(None, "--repo", help="Repo path for the run dir"),
+    command_override: Optional[list[str]] = typer.Option(None, "--command", help="Override agent command (testing)"),
+):
+    """One prompt in, shipped product out: bootstrap the fullstack-commercial team.
+
+    Creates the run dir, then launches the `fullstack-commercial` template team
+    with the prompt as the goal. Exits 0 once spawned; the run proceeds in the
+    background (subprocess backend detaches agents).
+    """
+    if mode not in ("pro", "simple"):
+        console.print(f"[red]Invalid --mode '{mode}' — expected 'pro' or 'simple'.[/red]")
+        raise typer.Exit(1)
+
+    from clawteam.config import load_config
+
+    if not profile:
+        profile = load_config().default_profile or None
+
+    run_id = f"ship-{uuid.uuid4().hex[:8]}"
+    repo_root = Path(repo) if repo else Path.cwd()
+    run_dir = repo_root / ".clawteam-local" / "runs" / run_id
+    run_dir.mkdir(parents=True, exist_ok=True)
+
+    t_name = team or run_id
+    run_record = {
+        "run_id": run_id,
+        "prompt": prompt,
+        "mode": mode,
+        "budget": budget,
+        "no_fork": no_fork,
+        "team": t_name,
+        "template": "fullstack-commercial",
+        "created_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+    }
+    (run_dir / "run.json").write_text(
+        json.dumps(run_record, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
+
+    launch_team(
+        template="fullstack-commercial",
+        goal=prompt,
+        backend=backend,
+        profile=profile,
+        team_name=t_name,
+        workspace=False,
+        repo=repo,
+        command_override=command_override,
+    )
+
+    def _human(_data):
+        console.print(f"\n[green bold]Run {run_id} shipped — team '{t_name}'[/green bold]\n")
+        console.print(f"[bold]Prompt:[/bold] {prompt}")
+        console.print(f"[bold]Mode:[/bold]   {mode}{' (forks disabled)' if no_fork else ''}")
+        if budget:
+            console.print(f"[bold]Budget:[/bold] {budget}")
+        console.print(f"[bold]Run dir:[/bold] {run_dir / 'run.json'}")
+        console.print(f"[bold]Board:[/bold]  clawteam board show {t_name}")
+
+    _output({"status": "shipped", **run_record}, _human)
+
+
 # ── Hook management ────────────────────────────────────────────────────
 
 hook_app = typer.Typer(help="Event hook management")

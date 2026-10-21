@@ -10,6 +10,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
+import uuid
 from dataclasses import dataclass, field
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -889,6 +890,49 @@ class BoardHandler(BaseHTTPRequestHandler):
                 self._serve_json({"status": "error", "error": str(e)})
                 return
             self._serve_json(result)
+            return
+
+        if path == "/api/team/create":
+            content_length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(content_length).decode("utf-8")
+            try:
+                payload = json.loads(body)
+            except Exception as e:
+                self._serve_json({"status": "error", "error": f"invalid JSON: {e}"})
+                return
+            from clawteam.templates import load_template
+            from clawteam.team.manager import TeamManager
+            from clawteam.team.tasks import TaskStore
+
+            template_name = payload.get("template", "fullstack-commercial")
+            team_name = payload.get("name", "") or f"{template_name}-{uuid.uuid4().hex[:6]}"
+            try:
+                tmpl = load_template(template_name)
+            except FileNotFoundError as e:
+                self._serve_json({"status": "error", "error": str(e)})
+                return
+            leader_id = uuid.uuid4().hex[:12]
+            try:
+                TeamManager.create_team(
+                    name=team_name,
+                    leader_name=tmpl.leader.name,
+                    leader_id=leader_id,
+                    description=tmpl.description,
+                )
+            except ValueError as e:
+                self._serve_json({"status": "error", "error": str(e)})
+                return
+            for agent in tmpl.agents:
+                TeamManager.add_member(
+                    team_name=team_name,
+                    member_name=agent.name,
+                    agent_id=uuid.uuid4().hex[:12],
+                    agent_type=agent.type,
+                )
+            ts = TaskStore(team_name)
+            for task_def in tmpl.tasks:
+                ts.create(subject=task_def.subject, description=task_def.description, owner=task_def.owner)
+            self._serve_json({"status": "ok", "team": team_name, "template": template_name})
             return
 
         if path.startswith("/api/team/") and path.endswith("/task"):

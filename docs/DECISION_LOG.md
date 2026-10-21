@@ -14,6 +14,7 @@ Format and rules: `AUTONOMY_POLICY.md` §6. Anchor challenges use the id prefix 
 | D-007 | 2026-10-01 | `fullstack-commercial` is additive; `agentic-se` unchanged | Anchor F1 | none |
 | D-008 | 2026-10-01 | Push only to `fork`; never `origin` | Anchor A2 | none |
 | D-009 | 2026-10-02 | `CLAWTEAM_DATA_DIR` set to `F:\AgentCore\runtime\clawteam`; `~/.clawteam/config.json` confirmed to stay fixed (code fact, `clawteam/config.py::config_path()`); PG assignment is a dedicated `clawteam` DB (or schema) inside the existing shared `127.0.0.1:55433` instance, not a new port | Verified by reading `clawteam/team/models.py::get_data_dir()` and `clawteam/config.py::config_path()`; see `docs/STORAGE_AND_DATA_CONTRACT.md` | updates B5, adds B6a |
+| D-010 | 2026-10-02 | OpenHands spike → **ADOPT-ENGINE** (optional). NativeEngine remains default. Canvas Docker at `127.0.0.1:8003` is optional operator UI only. Primary LLM `z-ai/glm-5.3` / LiteLLM `openrouter/z-ai/glm-5.3`; secondary `deepseek/deepseek-v4.1-flash`. Media stays `KIE_API_KEY` (not OpenHands). | Evidence: `docs/OPENHANDS_AUDIT_2026-10-02.md`; SDK 1.50.1 local WindowsTerminal smoke 3/3 corrected; `/ready` 200; MIT OSS path; B1 preserved (no Docker hard-dep) | none (B1 upheld) |
 
 ## Anchor challenges (`CHAL-xxx`)
 

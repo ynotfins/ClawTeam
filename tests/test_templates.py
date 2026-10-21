@@ -195,3 +195,66 @@ class TestListTemplates:
             assert "description" in t
             assert "source" in t
             assert t["source"] in ("builtin", "user")
+
+
+class TestFullstackCommercial:
+    """WP1 — the fullstack-commercial team template (docs/SWARM_TEAM_SPEC.md roster)."""
+
+    ROSTER = {
+        "plan", "architect", "agent", "be-dev", "fe-dev", "qa", "debug", "ask",
+        "security", "devops", "archive", "prompt-engineer", "critic-code",
+        "critic-design", "critic-product", "explorer-a", "explorer-b",
+        "judge", "integrator",
+    }
+
+    def test_load(self):
+        tmpl = load_template("fullstack-commercial")
+        assert tmpl.name == "fullstack-commercial"
+        assert tmpl.leader.name == "plan"
+        assert tmpl.leader.type == "planner"
+        assert tmpl.backend == "subprocess"
+        assert tmpl.command == ["claude"]
+
+    def test_roster_matches_swarm_team_spec(self):
+        tmpl = load_template("fullstack-commercial")
+        names = {tmpl.leader.name} | {a.name for a in tmpl.agents}
+        assert names == self.ROSTER
+
+    def test_agents_have_tasks(self):
+        tmpl = load_template("fullstack-commercial")
+        for agent in tmpl.agents:
+            assert agent.task != "", f"Agent '{agent.name}' has no task text"
+
+    def test_task_owners_match_agents(self):
+        tmpl = load_template("fullstack-commercial")
+        agent_names = {tmpl.leader.name} | {a.name for a in tmpl.agents}
+        for task in tmpl.tasks:
+            if task.owner:
+                assert task.owner in agent_names, f"Task owner '{task.owner}' not in agents"
+
+    def test_task_substitution_keeps_placeholders(self):
+        tmpl = load_template("fullstack-commercial")
+        rendered = render_task(tmpl.leader.task, team_name="fsc-demo", goal="ship a product")
+        assert "fsc-demo" in rendered
+        assert "ship a product" in rendered
+
+    def test_no_stale_memory_wiring_and_no_secret_literals(self):
+        """Prohibition mentions ('no OpenMemory') are fine; stale instance wiring is not."""
+        tmpl = load_template("fullstack-commercial")
+        texts = [tmpl.leader.task] + [a.task for a in tmpl.agents]
+        for text in texts:
+            low = text.lower()
+            assert "oi-openmemory-prod" not in low, "stale OpenMemory instance wired"
+            assert "8760" not in low, "stale OpenMemory port wired"
+            assert "sk-or-v1" not in low, "secret literal in prompt"
+            assert "Bearer " not in text, "credential literal in prompt"
+
+    def test_archive_lane_points_at_agentcore_gateway(self):
+        tmpl = load_template("fullstack-commercial")
+        archive = next(a for a in tmpl.agents if a.name == "archive")
+        assert "agentcore-gateway" in archive.task
+
+    def test_listed(self):
+        templates = list_templates()
+        names = {t["name"] for t in templates}
+        assert "fullstack-commercial" in names
