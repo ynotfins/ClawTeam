@@ -132,3 +132,80 @@ def diff_stat(worktree_path: Path) -> str:
     if unstaged:
         parts.append(f"Unstaged:\n{unstaged}")
     return "\n".join(parts) if parts else "Clean — no changes."
+
+
+# ---------------------------------------------------------------------------
+# Stage-layer helpers (additive — used by clawteam/stage/)
+# ---------------------------------------------------------------------------
+
+
+def config_set(repo: Path, key: str, value: str) -> None:
+    """Set a local git config value (``git config <key> <value>``)."""
+    _run(["config", key, value], cwd=repo)
+
+
+def config_get(repo: Path, key: str) -> str | None:
+    """Return a local git config value, or None when unset."""
+    out = _run(["config", "--get", key], cwd=repo, check=False)
+    return out or None
+
+
+def ensure_longpaths(repo: Path) -> bool:
+    """Enable ``core.longpaths`` on the repo (idempotent).
+
+    Windows MAX_PATH protection for stage worktrees, which branch user
+    content into deep ``ship/<run>/...`` trees. Returns True when enabled.
+    """
+    current = config_get(repo, "core.longpaths")
+    if current is None or current.lower() not in ("true", "1", "yes", "on"):
+        config_set(repo, "core.longpaths", "true")
+        return True
+    return False
+
+
+def list_branches(repo: Path, pattern: str | None = None) -> list[str]:
+    """List local branch names, optionally matching a glob *pattern*."""
+    args = ["branch", "--list", "--format=%(refname:short)"]
+    if pattern:
+        args.append(pattern)
+    raw = _run(args, cwd=repo, check=False)
+    return [line for line in raw.splitlines() if line.strip()]
+
+
+def branch_exists(repo: Path, branch: str) -> bool:
+    """Return True when a local branch named *branch* exists."""
+    return branch in list_branches(repo, branch)
+
+
+def worktree_path_exists(repo: Path, worktree_path: Path) -> bool:
+    """Return True when *worktree_path* is a registered worktree of *repo*.
+
+    ``git worktree list --porcelain`` reports forward-slash paths even on
+    Windows, while callers may hold backslash paths, so compare as Path
+    objects (separator- and case-normalized) rather than raw strings.
+    """
+    target = worktree_path.resolve(strict=False)
+    return any(
+        Path(w.get("path", "")).resolve(strict=False) == target
+        for w in list_worktrees(repo)
+    )
+
+
+def merge_in_worktree(worktree_path: Path, src_branch: str, no_ff: bool = True) -> tuple[bool, str]:
+    """Merge *src_branch* into the branch checked out at *worktree_path*.
+
+    Unlike :func:`merge_branch` this never checks out anything, so it is safe
+    when the target branch is checked out in another worktree (the stage
+    integration layout). On conflict the merge is aborted and
+    ``(False, output)`` is returned.
+    """
+    args = ["merge"]
+    if no_ff:
+        args.append("--no-ff")
+    args.append(src_branch)
+    try:
+        out = _run(args, cwd=worktree_path)
+        return True, out
+    except GitError as e:
+        subprocess.run(["git", "merge", "--abort"], cwd=worktree_path, capture_output=True)
+        return False, str(e)

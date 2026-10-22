@@ -3806,6 +3806,175 @@ def workspace_status(
 
 
 # ============================================================================
+# Stage Commands (WP2 — ship-run stage layer)
+# ============================================================================
+
+stage_app = typer.Typer(help="Ship-run stage layer: worktrees + Judge-gated integration")
+app.add_typer(stage_app, name="stage")
+
+
+def _require_stage_manager(repo: Optional[str]):
+    from clawteam.stage import get_stage_manager
+
+    mgr = get_stage_manager(repo)
+    if mgr is None:
+        console.print("[red]Not in a git repo.[/red]")
+        raise typer.Exit(1)
+    return mgr
+
+
+@stage_app.command("create")
+def stage_create(
+    run: str = typer.Argument(..., help="Run id (e.g. ship-ab12cd34)"),
+    lane: bool = typer.Option(False, "--lane", help="Create a lane stage (requires --role)"),
+    fork: bool = typer.Option(False, "--fork", help="Create a fork-option stage (--decision-id, --option)"),
+    ab: bool = typer.Option(False, "--ab", help="Create an A/B experiment stage (--experiment-id)"),
+    role: Optional[str] = typer.Option(None, "--role", help="Lane role name (with --lane)"),
+    decision_id: Optional[str] = typer.Option(None, "--decision-id", help="Fork decision id (with --fork)"),
+    option: Optional[str] = typer.Option(None, "--option", help="Fork option, e.g. a or b (with --fork)"),
+    experiment_id: Optional[str] = typer.Option(None, "--experiment-id", help="Experiment id (with --ab)"),
+    team: Optional[str] = typer.Option(None, "--team", "--team-name", "-t", help="Board team (default: run id)"),
+    repo: Optional[str] = typer.Option(None, "--repo", help="Git repo path"),
+):
+    """Create a ship-run stage (branch + worktree). The integration stage is created automatically."""
+    from clawteam.stage import StageError
+
+    picked = [k for k, on in (("lane", lane), ("fork", fork), ("ab", ab)) if on]
+    if len(picked) != 1:
+        console.print("[red]Pick exactly one of --lane / --fork / --ab.[/red]")
+        raise typer.Exit(1)
+    kind = picked[0]
+    if kind == "lane" and not role:
+        console.print("[red]--lane requires --role <role>.[/red]")
+        raise typer.Exit(1)
+    if kind == "fork" and not (decision_id and option):
+        console.print("[red]--fork requires --decision-id <id> and --option <a|b>.[/red]")
+        raise typer.Exit(1)
+    if kind == "ab" and not experiment_id:
+        console.print("[red]--ab requires --experiment-id <id>.[/red]")
+        raise typer.Exit(1)
+
+    mgr = _require_stage_manager(repo)
+    try:
+        if kind == "lane":
+            info = mgr.create_lane(run, role, team)
+        elif kind == "fork":
+            info = mgr.create_fork(run, decision_id, option, team)
+        else:
+            info = mgr.create_ab(run, experiment_id, team)
+    except StageError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(1)
+
+    _output(
+        {"status": "created", "stage": info.model_dump()},
+        lambda d: console.print(
+            f"[green]OK[/green] {d['stage']['kind']} stage '{d['stage']['name']}' "
+            f"→ branch {d['stage']['branch']}\n      worktree {d['stage']['worktree_path']}"
+        ),
+    )
+
+
+@stage_app.command("promote")
+def stage_promote(
+    run: str = typer.Argument(..., help="Run id"),
+    branch: str = typer.Argument(..., help="Stage branch to promote (ship/<run>/…)"),
+    approved_by: str = typer.Option("judge", "--approved-by", help="Approver — must be 'judge' (Judge-approved only)"),
+    note: Optional[str] = typer.Option(None, "--note", help="Verdict note recorded with the promotion"),
+    team: Optional[str] = typer.Option(None, "--team", "--team-name", "-t", help="Board team (default: run id)"),
+    repo: Optional[str] = typer.Option(None, "--repo", help="Git repo path"),
+):
+    """Judge-approved only: merge a stage branch into the run's integration branch."""
+    from clawteam.stage import StageError
+
+    mgr = _require_stage_manager(repo)
+    try:
+        record = mgr.promote(run, branch, approved_by=approved_by, note=note or "", team=team)
+    except StageError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(1)
+
+    _output(
+        {"status": "promoted", "promotion": record.model_dump()},
+        lambda d: console.print(
+            f"[green]OK[/green] Judge approved: {d['promotion']['branch']} → integration"
+            + (f"\n{d['promotion']['output']}" if d["promotion"]["output"] else "")
+        ),
+    )
+
+
+@stage_app.command("discard")
+def stage_discard(
+    run: str = typer.Argument(..., help="Run id"),
+    branch: str = typer.Argument(..., help="Stage branch to discard"),
+    team: Optional[str] = typer.Option(None, "--team", "--team-name", "-t", help="Board team"),
+    repo: Optional[str] = typer.Option(None, "--repo", help="Git repo path"),
+):
+    """Remove a stage worktree + branch. The integration stage cannot be discarded."""
+    from clawteam.stage import StageError
+
+    mgr = _require_stage_manager(repo)
+    try:
+        ok = mgr.discard(run, branch, team)
+    except StageError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(1)
+    if not ok:
+        console.print(f"[yellow]No stage found for branch '{branch}' in run '{run}'.[/yellow]")
+        raise typer.Exit(1)
+    _output(
+        {"status": "discarded", "run": run, "branch": branch},
+        lambda d: console.print(f"[green]OK[/green] Discarded {d['branch']} (worktree + branch removed)."),
+    )
+
+
+@stage_app.command("list")
+def stage_list(
+    run: str = typer.Argument(..., help="Run id"),
+    team: Optional[str] = typer.Option(None, "--team", "--team-name", "-t", help="Board team"),
+    repo: Optional[str] = typer.Option(None, "--repo", help="Git repo path"),
+):
+    """List all stages for a run."""
+    mgr = _require_stage_manager(repo)
+    stages = mgr.list_stages(run, team)
+    if _json_output:
+        _output({"stages": [s.model_dump() for s in stages]}, lambda d: None)
+        return
+    if not stages:
+        console.print(f"No stages for run '{run}'.")
+        return
+    table = Table(title=f"Stages — {run}")
+    table.add_column("Kind")
+    table.add_column("Name")
+    table.add_column("Branch")
+    table.add_column("Worktree")
+    table.add_column("Created")
+    for s in stages:
+        table.add_row(s.kind, s.name, s.branch, s.worktree_path, format_timestamp(s.created_at))
+    console.print(table)
+
+
+@stage_app.command("gc")
+def stage_gc(
+    run: str = typer.Argument(..., help="Run id"),
+    team: Optional[str] = typer.Option(None, "--team", "--team-name", "-t", help="Board team"),
+    repo: Optional[str] = typer.Option(None, "--repo", help="Git repo path"),
+):
+    """Drop registry entries whose worktree and branch are both gone."""
+    mgr = _require_stage_manager(repo)
+    report = mgr.gc(run, team)
+    _output(
+        {"status": "gc", "report": report.model_dump()},
+        lambda d: console.print(
+            f"[green]OK[/green] gc '{d['report']['run']}': removed {len(d['report']['removed'])}"
+            f", kept {len(d['report']['kept'])}"
+            + (f"\nremoved: {', '.join(d['report']['removed'])}" if d["report"]["removed"] else "")
+            + (f"\nkept:    {', '.join(d['report']['kept'])}" if d["report"]["kept"] else "")
+        ),
+    )
+
+
+# ============================================================================
 # Context Commands (git context layer)
 # ============================================================================
 
@@ -4252,6 +4421,18 @@ def ship(
     run_dir.mkdir(parents=True, exist_ok=True)
 
     t_name = team or run_id
+
+    # WP2: create the run's integration stage (branch + worktree) and record it
+    # in run.json. Non-fatal on failure — ship proceeds without a stage.
+    stage_info = None
+    try:
+        from clawteam.stage import get_stage_manager
+        stage_mgr = get_stage_manager(str(repo_root))
+        if stage_mgr is not None:
+            stage_info = stage_mgr.integration_stage(run_id, t_name)
+    except Exception as exc:
+        console.print(f"[yellow]Stage integration setup skipped: {exc}[/yellow]")
+
     run_record = {
         "run_id": run_id,
         "prompt": prompt,
@@ -4262,6 +4443,8 @@ def ship(
         "template": "fullstack-commercial",
         "created_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
     }
+    if stage_info is not None:
+        run_record["stage"] = stage_info.model_dump()
     (run_dir / "run.json").write_text(
         json.dumps(run_record, indent=2, ensure_ascii=False), encoding="utf-8"
     )
@@ -4284,6 +4467,9 @@ def ship(
         if budget:
             console.print(f"[bold]Budget:[/bold] {budget}")
         console.print(f"[bold]Run dir:[/bold] {run_dir / 'run.json'}")
+        if stage_info is not None:
+            console.print(f"[bold]Integration:[/bold] {stage_info.branch}")
+            console.print(f"[bold]Worktree:[/bold]    {stage_info.worktree_path}")
         console.print(f"[bold]Board:[/bold]  clawteam board show {t_name}")
 
     _output({"status": "shipped", **run_record}, _human)
