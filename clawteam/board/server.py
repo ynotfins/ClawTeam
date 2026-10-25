@@ -16,6 +16,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
+from clawteam.board import ocr_tools
 from clawteam.board.collector import BoardCollector
 
 _STATIC_DIR = Path(__file__).parent / "static"
@@ -579,6 +580,12 @@ class BoardHandler(BaseHTTPRequestHandler):
             self._serve_json({"skills": _skills_list()})
         elif path == "/api/tools/profiles":
             self._serve_json(_profiles_list())
+        elif path == "/api/ocr/tools":
+            # Hardcoded IureOCR (Tesseract + pdfium) extraction catalog + server status
+            self._serve_json({
+                "status": ocr_tools.server_status(),
+                "tools": ocr_tools.tool_catalog(),
+            })
         elif path == "/api/openrouter/models":
             self._serve_json({"models": _or_models()})
         elif path == "/api/openrouter/rankings":
@@ -678,7 +685,6 @@ class BoardHandler(BaseHTTPRequestHandler):
             except Exception as e:
                 self.send_error(400, f"invalid JSON: {e}")
                 return
-            handler = _mcp_add
             action = payload.get("action", "add")
             try:
                 if path == "/api/tools/mcp":
@@ -704,6 +710,32 @@ class BoardHandler(BaseHTTPRequestHandler):
                 self._serve_json({"status": "error", "error": str(e)})
                 return
             self._serve_json(result)
+            return
+
+        if path == "/api/ocr/call":
+            # Call one hardcoded IureOCR tool (ocr_file / extract_text / pdf_info /
+            # render_page / edit_pdf_pages / ocr_languages) via the local MCP stdio bridge.
+            content_length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(content_length).decode("utf-8")
+            try:
+                payload = json.loads(body)
+            except Exception as e:
+                self._serve_json({"status": "error", "error": f"invalid JSON: {e}"})
+                return
+            tool = str(payload.get("tool", ""))
+            arguments = payload.get("arguments", {})
+            if not isinstance(arguments, dict):
+                self._serve_json({"status": "error", "error": "arguments must be an object"})
+                return
+            try:
+                result = ocr_tools.call_tool(tool, arguments)
+            except ocr_tools.OcrBridgeError as e:
+                self._serve_json({"status": "error", "error": str(e)})
+                return
+            except Exception as e:
+                self._serve_json({"status": "error", "error": f"unexpected OCR bridge failure: {e}"})
+                return
+            self._serve_json({"status": "ok", "tool": tool, "result": result})
             return
 
         if path == "/api/media/uploads":
@@ -900,9 +932,9 @@ class BoardHandler(BaseHTTPRequestHandler):
             except Exception as e:
                 self._serve_json({"status": "error", "error": f"invalid JSON: {e}"})
                 return
-            from clawteam.templates import load_template
             from clawteam.team.manager import TeamManager
             from clawteam.team.tasks import TaskStore
+            from clawteam.templates import load_template
 
             template_name = payload.get("template", "fullstack-commercial")
             team_name = payload.get("name", "") or f"{template_name}-{uuid.uuid4().hex[:6]}"
@@ -1066,8 +1098,8 @@ def serve(
     # Photo lane (operator decision 2026-09-26, option b): uploads live in
     # ~/.clawteam/media/uploads and the loopback photo host is the only thing
     # the public cloudflared hostname may reach. Board up = photo lane up.
-    from clawteam.media.uploads import UploadStore, photohost_config
     from clawteam.media.photohost import start_photohost
+    from clawteam.media.uploads import UploadStore, photohost_config
     BoardHandler.upload_store = UploadStore()
     cfg = photohost_config()
     try:
