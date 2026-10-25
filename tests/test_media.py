@@ -216,6 +216,40 @@ class TestKieAdapters:
         assert payload["input"]["image_url"] == "https://x/img.png"
         assert "aspect_ratio" not in payload["input"]
 
+    def test_minimax_h3_t2v_payload(self):
+        a = kie.MiniMaxH3TextToVideoAdapter()
+        payload = a.build({"kind": "t2v", "prompt": "p", "params": {"aspect_ratio": "16:9"}}, [])
+        assert payload["model"] == "minimax-h3/text-to-video"
+        assert payload["input"]["prompt"] == "p"
+        assert payload["input"]["aspect_ratio"] == "16:9"  # required for t2v
+        assert payload["input"]["duration"] == kie.MINIMAX_H3_DEFAULT_DURATION
+        assert payload["input"]["resolution"] == "2K"
+
+    def test_minimax_h3_i2v_uses_first_frame(self):
+        a = kie.MiniMaxH3ImageToVideoAdapter()
+        payload = a.build({"kind": "i2v", "prompt": "p", "params": {"duration": 8}}, ["https://x/f.png"])
+        assert payload["model"] == "minimax-h3/image-to-video"
+        assert payload["input"]["first_frame_url"] == "https://x/f.png"
+        assert payload["input"]["duration"] == 8
+        assert "aspect_ratio" not in payload["input"]  # follows the input frame
+
+    def test_minimax_h3_prompt_is_capped(self):
+        a = kie.MiniMaxH3TextToVideoAdapter()
+        payload = a.build({"kind": "t2v", "prompt": "x" * 9000, "params": {}}, [])
+        assert len(payload["input"]["prompt"]) <= kie.MINIMAX_H3_PROMPT_MAX
+
+    def test_default_video_models_are_minimax_h3(self):
+        p = kie.KieProvider(client=kie.KieClient(key="k"))
+        assert p.default_model_for("t2v") == "minimax-h3/text-to-video"
+        assert p.default_model_for("i2v") == "minimax-h3/image-to-video"
+        assert p.default_model_for("t2img") == "flux1-kontext"  # image kinds stay Flux
+
+    def test_minimax_h3_estimate_is_per_second(self):
+        p = kie.KieProvider(client=kie.KieClient(key="k"))
+        est = p.estimate("t2v", "minimax-h3/text-to-video", {"duration": 10, "resolution": "768P"})
+        assert est["credits"] == kie.MINIMAX_H3_PER_SECOND["768P"] * 10
+        assert est["verified"] is False  # estimate only — verify against KIE dashboard
+
     def test_unknown_model_rejected(self):
         p = kie.KieProvider.__new__(kie.KieProvider)
         with pytest.raises(ValueError):

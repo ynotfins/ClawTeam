@@ -113,6 +113,21 @@ def builtin_presets() -> dict[str, AgentPreset]:
             "https://api.z.ai/api/anthropic",
             "glm-5",
         ),
+        "kie": AgentPreset(
+            description="Claude Code on KIE (api.kie.ai) — Anthropic Messages protocol, billed in KIE credits.",
+            auth_env="KIE_API_KEY",
+            client_overrides={
+                "claude": AgentProfile(
+                    agent="claude",
+                    model="",
+                    base_url="https://api.kie.ai/anthropic",
+                    base_url_env="ANTHROPIC_BASE_URL",
+                    api_key_env="KIE_API_KEY",
+                    api_key_target_env="ANTHROPIC_AUTH_TOKEN",
+                    env={},
+                )
+            },
+        ),
         "bailian": AgentPreset(
             description="Alibaba Bailian Claude-compatible endpoint.",
             auth_env="DASHSCOPE_API_KEY",

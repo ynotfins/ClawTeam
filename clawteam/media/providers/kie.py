@@ -17,12 +17,18 @@ CREDIT_TO_USD = 0.005
 
 # Estimate-only pricing table (NOT verified billing — dashboard caveat in UI).
 # Sources: kie.ai public model pages, 2026-09-17. Bump version on any change.
-PRICING_VERSION = "kie-pricing-2026-09-23/3"
+PRICING_VERSION = "kie-pricing-2026-10-25/4"
 PRICING = {
     # model: {kind: credits} — estimates pending per-task actuals from provider
     "flux1-kontext": {"t2img": 5.0, "edit": 5.0, "img2img": 5.0},  # verified live: creditsConsumed=5.0
     "runway": {"t2v": 12.0, "i2v": 12.0},  # verified live 2026-09-23: 5s/720p creditsConsumed=12.0
 }
+
+# MiniMax H3 bills per generated second (catalog pricingDesc, 2026-10-25):
+# 768P 8 credits/s ($0.04/s), 2K 13 credits/s ($0.065/s); duration 4-15s, default 6s.
+MINIMAX_H3_PER_SECOND = {"768P": 8.0, "2K": 13.0}
+MINIMAX_H3_DEFAULT_DURATION = 6
+MINIMAX_H3_PROMPT_MAX = 7000
 
 
 def kie_key() -> str:
@@ -154,7 +160,51 @@ class RunwayAdapter(_Adapter):
         return {"model": self.model, "input": inp}
 
 
-ADAPTERS: dict[str, _Adapter] = {a.model: a for a in (FluxKontextAdapter(), RunwayAdapter())}
+class MiniMaxH3TextToVideoAdapter(_Adapter):
+    """docs.kie.ai/market/minimax-h3/text-to-video — required aspect_ratio + duration 4-15s."""
+
+    model = "minimax-h3/text-to-video"
+    kinds = ("t2v",)
+
+    def build(self, job: dict, input_asset_urls: list[str]) -> dict:
+        p = job.get("params", {})
+        inp: dict = {
+            "prompt": job.get("prompt", "")[:MINIMAX_H3_PROMPT_MAX],
+            "aspect_ratio": p.get("aspect_ratio", "16:9"),  # required; adaptive unsupported
+            "duration": int(p.get("duration", MINIMAX_H3_DEFAULT_DURATION)),
+            "resolution": p.get("resolution", "2K"),
+        }
+        return {"model": self.model, "input": inp}
+
+
+class MiniMaxH3ImageToVideoAdapter(_Adapter):
+    """docs.kie.ai/market/minimax-h3/image-to-video — first/last frame URLs + duration."""
+
+    model = "minimax-h3/image-to-video"
+    kinds = ("i2v",)
+
+    def build(self, job: dict, input_asset_urls: list[str]) -> dict:
+        p = job.get("params", {})
+        inp: dict = {
+            "prompt": job.get("prompt", "")[:MINIMAX_H3_PROMPT_MAX],
+            "duration": int(p.get("duration", MINIMAX_H3_DEFAULT_DURATION)),
+            "resolution": p.get("resolution", "2K"),
+        }
+        # Either first_frame_url or last_frame_url is required; we always have a
+        # first frame when the router passes input URLs.
+        if input_asset_urls:
+            inp["first_frame_url"] = input_asset_urls[0]
+        return {"model": self.model, "input": inp}
+
+
+ADAPTERS: dict[str, _Adapter] = {
+    a.model: a for a in (
+        FluxKontextAdapter(),
+        RunwayAdapter(),
+        MiniMaxH3TextToVideoAdapter(),
+        MiniMaxH3ImageToVideoAdapter(),
+    )
+}
 
 # Normalized mapping from recordInfo states (waiting/queuing/generating/
 # success/fail per docs) — defensive: unknown strings stay "running" until timeout.
@@ -207,6 +257,13 @@ class KieProvider:
             return {"credits": credits, "usd": round(credits * CREDIT_TO_USD, 4),
                     "pricing_table_version": PRICING_VERSION, "verified": False,
                     "note": "estimate only - one identity-consistent edit"}
+        if model.startswith("minimax-h3/"):
+            # MiniMax H3 bills per generated second at the requested resolution.
+            rate = MINIMAX_H3_PER_SECOND.get(str(params.get("resolution", "2K")), 13.0)
+            seconds = int(params.get("duration", MINIMAX_H3_DEFAULT_DURATION))
+            return {"credits": rate * seconds, "usd": round(rate * seconds * CREDIT_TO_USD, 4),
+                    "pricing_table_version": PRICING_VERSION, "verified": False,
+                    "note": f"estimate only - {rate:.0f} credits/s x {seconds}s (check KIE dashboard)"}
         credits = PRICING.get(model, {}).get(kind)
         if credits is None:
             return {"credits": None, "usd": None, "pricing_table_version": PRICING_VERSION,
@@ -216,7 +273,13 @@ class KieProvider:
                 "note": "estimate only — verify against KIE dashboard"}
 
     def default_model_for(self, kind: str) -> str:
-        return "runway" if kind in ("t2v", "i2v") else "flux1-kontext"
+        # Operator default (2026-10-25): MiniMax H3 for video kinds (audio-bearing
+        # stereo output), Flux Kontext for image kinds. Runway stays selectable.
+        if kind in ("t2v",):
+            return "minimax-h3/text-to-video"
+        if kind in ("i2v",):
+            return "minimax-h3/image-to-video"
+        return "flux1-kontext"
 
     def submit(self, job: dict, input_asset_urls: list[str]) -> tuple[str, str]:
         model = job.get("model") or self.default_model_for(job["kind"])
