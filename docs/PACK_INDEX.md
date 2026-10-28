@@ -11,6 +11,7 @@ it does not replace them. It is installed in the repo; the original authoring co
 3. **[STORAGE_AND_DATA_CONTRACT.md](STORAGE_AND_DATA_CONTRACT.md)** — where state actually lives, verified against code (`CLAWTEAM_DATA_DIR`, PG, memory).
 4. **[PRE_BOOTSTRAP_PROMPT.md](PRE_BOOTSTRAP_PROMPT.md)** — paste into the agent **first**: one-time cleanup edits + green baseline.
 5. **[ONE_SHOT_BOOTSTRAP_PROMPT.md](ONE_SHOT_BOOTSTRAP_PROMPT.md)** — paste **second**: the optimized build prompt (full + compact).
+6. **[GOAL_MODE_PROMPT.md](GOAL_MODE_PROMPT.md)** — paste **third** (2026-10-27): Goal Mode objective — finish WP4/WP3/WP5/WP6 + WP9/WP10/WP11 and ship the Windows exe; operator tests 2026-10-28.
 
 ## Index
 
@@ -22,7 +23,8 @@ it does not replace them. It is installed in the repo; the original authoring co
 | [PRE_BOOTSTRAP_PROMPT.md](PRE_BOOTSTRAP_PROMPT.md) | owner → agent | Run first: hygiene edits (memory policy text, secrets table, .gitignore, BLUEPRINT), baseline tests, local commit |
 | [ONE_SHOT_BOOTSTRAP_PROMPT.md](ONE_SHOT_BOOTSTRAP_PROMPT.md) | owner → agent | Run second: optimized build prompt + what changed from the original |
 | [PRODUCT_SPEC.md](PRODUCT_SPEC.md) | PM, agents | Vision, personas, functional/non-functional requirements |
-| [BUILD_PLAN.md](BUILD_PLAN.md) | lead agent | Baseline, gap-audit checklist, WP1–WP8, order, hygiene fixes, risks |
+| [BUILD_PLAN.md](BUILD_PLAN.md) | lead agent | Baseline, gap-audit checklist, WP1–WP8 + §3b WP9–WP11 (key custody, Stripe $1/mo, exe), order, hygiene fixes, risks |
+| [GOAL_MODE_PROMPT.md](GOAL_MODE_PROMPT.md) | owner → agent | Goal Mode objective + R1–R12 ship requirements + completion audit; arms `/goal` until the exe ships |
 | [ARCHITECTURE_ADDENDUM.md](ARCHITECTURE_ADDENDUM.md) | engineers | New modules, interfaces, storage, APIs |
 | [SWARM_TEAM_SPEC.md](SWARM_TEAM_SPEC.md) | engineers, `plan` | `fullstack-commercial` roster, phases, critic/explorer/judge loops, fork protocol |
 | [AUTONOMY_POLICY.md](AUTONOMY_POLICY.md) | all agents | No-questions policy, Top-Apps Benchmark, Absolute Blockers, fork rule, governors |

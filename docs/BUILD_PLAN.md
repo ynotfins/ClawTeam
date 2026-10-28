@@ -32,6 +32,9 @@ Mark each DONE / PARTIAL / MISSING with a file path or test as evidence.
 | WP6 | One-shot media prompt? Preset registry? 40 presets? KIS variants? New KIE adapters (audio/voice, lip-sync, music, upscale, video models)? Movie pipeline? |
 | WP7 | OpenHands spike notes in `DECISION_LOG`? `ExecutorEngine` interface? |
 | WP8 | Tests for all new code? Hygiene fixes (§6)? `SHIP_REPORT.md`? |
+| WP9 | Keys only server-side? Client exe key-free (strings scan)? Admin-only key rotation? Remote client reaches server? |
+| WP10 | Stripe $1/month product? Checkout + webhook + license gate? Keys env-only? |
+| WP11 | Reproducible exe build script? Clean-profile run (no Python)? Connects + demos pass? Build hash in SHIP_REPORT? |
 
 ## 3. Work packages
 
@@ -89,9 +92,37 @@ Mark each DONE / PARTIAL / MISSING with a file path or test as evidence.
 ### WP8 — Tests, docs, hygiene, ship report
 - See §6 and `TESTING_AND_ACCEPTANCE.md`.
 
+### WP9 — Key custody: server-held, remote-controlled (operator directive 2026-10-27, D-014)
+- **Keys never ship**: `KIE_API_KEY`/provider keys live ONLY on this PC's server side (User env / server
+  config). The distributed client carries no key material — verify with a strings scan of the built exe.
+- **Client = remote**: the exe is a client of the local server (HTTPS/Tailscale-family address), inheriting
+  board/media/extract/stage functions over the existing routes; key-material routes are admin-auth-only.
+- **Admin control stays here**: key rotation, presets, team control happen on this PC only; the client blocks
+  any attempt to read/change keys (no UI surface, server rejects non-admin calls).
+- Acceptance: strings scan of exe shows no `sk-`/key patterns; client works against server with zero keys in
+  its environment; admin routes reject non-admin.
+
+### WP10 — Commercialization: Stripe $1/month subscription (operator directive 2026-10-27, D-014)
+- Stripe product **$1/month** (price created on this PC; `STRIPE_API_KEY` env-only, never committed).
+- Checkout → success → **license grant**; webhook (`checkout.session.completed`,
+  `customer.subscription.updated/deleted`) → license state; monthly expiry enforcement.
+- **License gate**: client checks license with server on start and periodically; unlicensed ⇒ paywall screen
+  (Subscribe button → Stripe Checkout); server honors `active`/`past_due`/`canceled`.
+- Acceptance: E2E (test-mode) subscribe → license active → app usable; cancel → grace → blocked; mocked
+  webhook tests; no keys in repo (CI grep).
+
+### WP11 — Packaging: ship as a Windows exe (operator directive 2026-10-27, D-014)
+- `scripts/windows/build-exe.ps1`: PyInstaller onedir (or equivalent) with RGDS assets, templates, and the
+  client entry point `clawteam-client`; deterministic steps; build hash recorded in `SHIP_REPORT.md`.
+- Client needs NO Python on the target machine; runs on a clean Windows profile (family recipients).
+- **Ship criteria** (`TESTING_AND_ACCEPTANCE.md` §2-style): exe launches → connects to server → all 5 board
+  views render (Board/Tools/Models/Media/Extract) → one demo of each: media job, OCR extract, stage list →
+  license paywall shows for unlicensed install. Signed installer optional; antivirus false-positive notes
+  recorded.
+
 ## 4. Suggested order (agent may reorder; log it)
 
-`GAP_REPORT → WP2 → WP1 → WP4 → WP3 → WP5 → WP6 (registry+one-shot → dev presets → consumer presets → movie) → WP7 (parallel, time-boxed) → WP8`
+`GAP_REPORT → WP2 → WP1 → WP4 → WP3 → WP5 → WP6 (registry+one-shot → dev presets → consumer presets → movie) → WP9 → WP10 → WP11 → WP7 (parallel, time-boxed) → WP8 (SHIP_REPORT)`
 
 Rationale: Stage layer and team template are prerequisites for the swarm to build the rest of the product itself
 (dogfooding). Once WP1–WP4 work, **hand WP5–WP7 to the `fullstack-commercial` team** and supervise.

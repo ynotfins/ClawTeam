@@ -1,5 +1,37 @@
 # GAP_REPORT — Audit Against BUILD_PLAN (2026-10-21)
 
+## 2026-10-27 addendum (second audit pass — read this first)
+
+Delta since the 2026-10-21 pass below; the original audit is preserved as the trail.
+
+| Area | Status | Evidence |
+|---|---|---|
+| WP2 — Stage layer | **DONE** | `clawteam/stage/` (manager, models) + `stage create --lane\|--fork\|--ab` / `promote` (Judge-only) / `discard` / `list` / `gc` in `clawteam/cli/commands.py`; `ship/<run>/{integration,lane/<role>,fork/<id>/<option>,ab/<id>}` branches; root `D:\w\<run8>` (`CLAWTEAM_STAGE_ROOT` override); `core.longpaths` via `clawteam/workspace/git.py::ensure_longpaths`; `ship` wires integration stage into `run.json`. 16 tests `tests/test_stage.py`; commit `0761296` (pushed to fork). |
+| Extract panel (new capability) | **DONE** | `clawteam/board/ocr_tools.py` stdio JSON-RPC bridge to `I:\LocalApps\IureOCR\app\iureocr.exe --mcp`; `/api/ocr/tools` + `/api/ocr/call` routes; 5th board view; commit `8dce262`; live-verified (`available: true`, 6 tools). |
+| Default LLM provider | **DONE (D-013)** | `default_profile` = `kie` in `~/.clawteam/config.json`; builtin preset `kie` (`clawteam/spawn/presets.py`); default video models minimax-h3 adapters (`clawteam/media/providers/kie.py`); commit `f58772b`. KIE anthropic-messages 500 caveat 2026-10-25 → operator confirmed working 2026-10-27; `OPENROUTER_API_KEY` **recovered** (auth 200 + e2e chat 200). |
+| Board UI | **FIXED** | Duplicated `.task-id {` selector left one rule unclosed → CSS nesting swallowed all later rules; fixed + RGDS spacing tokenization; commit `98a1cd2`; 22 board tests green. |
+| Test baseline | **685 collected** | `pytest --collect-only` 2026-10-27 (was 650/2 at 2026-10-21). |
+
+**Milestones remaining to ship** (per `docs/BUILD_PLAN.md` §3/§3b; execution via
+`docs/GOAL_MODE_PROMPT.md`):
+
+1. **WP4** — autonomy engine (`decide()` benchmark tables, Blocker Card writer,
+   fork caps/controller). 2. **WP3** — critics/explorers/Judge loops + governors
+   (tokens/credits/wall-clock/concurrency) + stuck detection. 3. **WP5** —
+   Keep-It-Simple global toggle + Parent Gate + `--mode simple` engine reuse.
+   4. **WP6** — media presets registry + 40 presets (Dev+Consumer catalogs, KIS
+   variants) + one-shot intent router + movie pipeline + new KIE adapters
+   (verify schemas at build time). 5. **WP9** — server-held key custody + remote
+   client (keys never in the exe; admin key rotation only from this PC).
+   6. **WP10** — Stripe **$1/month** subscription + license gating. 7. **WP11** —
+   Windows exe packaging (`scripts/windows/build-exe.ps1`) verified on a clean
+   profile. 8. **WP8 tail** — hygiene (BLUEPRINT §2/§7 via `plan` lane,
+   `rgds.bak-1.0.1/` cleanup decision, docs-lock hash test) + `SHIP_REPORT.md`.
+
+WP7 (OpenHands spike) is decided optional (D-010) — not blocking ship.
+
+---
+
 > Audit-first report per `docs/BUILD_PLAN.md` §2. Each row carries file evidence.
 > Test baseline this pass: **650 passed / 2 skipped** (all 41 test files, run in 13
 > small sequential groups per `docs/HYGIENE_REPORT.md` §0 — Process Lasso kills

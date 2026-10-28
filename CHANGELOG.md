@@ -4,6 +4,49 @@ Product-level log for **this deployment** (the Windows-native developer
 control-plane on the ClawTeam framework). Framework changes from upstream
 HKUDS remain in git history and upstream docs. Dates are 2026.
 
+## [0.3.0-product.5] — 2026-10-27 — Stage layer, KIE default provider, Extract panel, UI repair
+
+### Added
+- **WP2 stage layer** (`clawteam/stage/`, commit `0761296`): per-run ship stages
+  on git worktrees — `ship/<run>/integration` (Judge-approved promotion only),
+  `ship/<run>/lane/<role>`, `ship/<run>/fork/<id>/<option>`, `ship/<run>/ab/<id>`;
+  short worktree root `D:\w\<first-8-of-run>` (override `CLAWTEAM_STAGE_ROOT`);
+  `core.longpaths` enabled per repo; CLI `clawteam stage create --lane|--fork|--ab`
+  / `promote` / `discard` / `list` / `gc`; `clawteam ship` now creates the run's
+  integration stage and records it in `run.json`. 16 tests (`tests/test_stage.py`)
+  on temp git repos (sandboxed stage root, `launch_team` stubbed — swarm untouched).
+- **Default provider `kie`** (D-013, commit `f58772b`): builtin preset + profile —
+  Claude Code on `https://api.kie.ai/anthropic`, key read at runtime from User env
+  `KIE_API_KEY` (env-var name only in files, never values). Default video models
+  are MiniMax H3 — `minimax-h3/text-to-video` + `minimax-h3/image-to-video`
+  adapters per docs.kie.ai schemas (per-second credits: 768P 8/s, 2K 13/s);
+  image kinds stay `flux1-kontext`. KIE serves no GLM on any agent protocol
+  (live-probed): default chat `claude-sonnet-5-5`; GLM-5.3 remains on
+  `openrouter-llm` (`LLM_API_KEY`). 6 new tests (`tests/test_media.py`).
+- **Board Extract panel** (commit `8dce262`): 5th board view wiring the six local
+  IureOCR MCP tools (`ocr_file`, `extract_text`, `pdf_info`, `render_page`,
+  `edit_pdf_pages`, `ocr_languages`) through `clawteam/board/ocr_tools.py`
+  (stdio JSON-RPC bridge, EOF-sentinel client) + `/api/ocr/*` routes. Fully local
+  OCR/PDF — no network, no key.
+- **Commercialization milestones locked** (D-014): WP9 server-held key custody +
+  remote client, WP10 Stripe **$1/month** subscription gating, WP11 Windows exe
+  packaging for family distribution (`docs/BUILD_PLAN.md` §3b); execution handed
+  to Goal Mode via `docs/GOAL_MODE_PROMPT.md`.
+
+### Fixed
+- **Board UI breakage** (commit `98a1cd2`): a duplicated `.task-id {` selector
+  left one CSS rule unclosed, so CSS nesting swallowed every rule after it —
+  kanban, tools, modals and nav lost all styling. Braces re-balanced (205/205);
+  22 spacing declarations tokenized to RGDS spacing tokens for a roomier
+  card layout; design-law suite green (22 board tests).
+
+### Notes
+- Suite baseline this entry: **685 tests collected** (was 650/2 at the
+  2026-10-21 handoff). `OPENROUTER_API_KEY` **recovered** (was 401-dead in
+  D-012): `auth/key` 200 and e2e `z-ai/glm-5.3-flash` chat 200 on 2026-10-27;
+  `LLM_API_KEY` also 200. Both providers green; `default_profile` can flip
+  between `kie` and `openrouter-llm` with one config change.
+
 ## [0.3.0-product.4] — 2026-09-26 — Self-hosted photo lane for Characters
 
 ### Added
