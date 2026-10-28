@@ -10,6 +10,13 @@ from clawteam.autonomy.blockers import (
     pending_notification,
     write_blocker,
 )
+from clawteam.autonomy.critics import (
+    CRITIC_INTERVAL_SECONDS,
+    FINDING_COOLDOWN_SECONDS,
+    TRIAGE_MIN_SEVERITY,
+    CriticLoop,
+    fingerprint_of,
+)
 from clawteam.autonomy.decide import (
     AutonomyError,
     decide,
@@ -21,12 +28,24 @@ from clawteam.autonomy.forks import (
     MAX_OPEN_FORKS,
     ForkController,
 )
+from clawteam.autonomy.governors import (
+    KINDS as GOVERNOR_KINDS,
+    PRO_DEFAULTS,
+    SIMPLE_DEFAULTS,
+    SOFT_STOP_FRACTION,
+    Governor,
+)
 from clawteam.autonomy.models import (
     BenchmarkEntry,
     BlockerRecord,
     DecisionOption,
     DecisionRecord,
     ForkLedgerEntry,
+)
+from clawteam.autonomy.stuck import (
+    ACTIVE_STATUSES,
+    STALLED_AFTER_MINUTES,
+    scan_stalled,
 )
 
 __all__ = [
@@ -41,6 +60,19 @@ __all__ = [
     "ForkController",
     "MAX_OPEN_FORKS",
     "MAX_BUDGET_FRACTION",
+    "CriticLoop",
+    "CRITIC_INTERVAL_SECONDS",
+    "FINDING_COOLDOWN_SECONDS",
+    "TRIAGE_MIN_SEVERITY",
+    "fingerprint_of",
+    "Governor",
+    "GOVERNOR_KINDS",
+    "PRO_DEFAULTS",
+    "SIMPLE_DEFAULTS",
+    "SOFT_STOP_FRACTION",
+    "scan_stalled",
+    "STALLED_AFTER_MINUTES",
+    "ACTIVE_STATUSES",
     "BenchmarkEntry",
     "DecisionOption",
     "DecisionRecord",

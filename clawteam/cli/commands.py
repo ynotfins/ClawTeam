@@ -4165,6 +4165,121 @@ def autonomy_forks(
     console.print(table)
 
 
+@autonomy_app.command("governor")
+def autonomy_governor(
+    run: str = typer.Argument(..., help="Run id"),
+    mode: str = typer.Option("pro", "--mode", help="pro | simple (default caps per AUTONOMY_POLICY §7)"),
+    team: Optional[str] = typer.Option(None, "--team", "--team-name", "-t", help="Board team (default: run id)"),
+    record: Optional[str] = typer.Option(None, "--record", help="Accumulate usage: KIND=AMOUNT (e.g. kie_credits=12)"),
+    set_budget: Optional[str] = typer.Option(None, "--set-budget", help="Set a cap: KIND=CAP"),
+    set_used: Optional[str] = typer.Option(None, "--set-used", help="Set a gauge: KIND=VALUE"),
+    repo: Optional[str] = typer.Option(None, "--repo", help="Git repo path"),
+):
+    """Budget governor (§7): show usage/verdicts, or record a spend."""
+    from clawteam.autonomy import AutonomyError, Governor
+
+    root = Path(repo) if repo else Path.cwd()
+    try:
+        gov = Governor(root, run, mode=mode)
+        if set_budget:
+            kind, _, cap = set_budget.partition("=")
+            gov.set_budget(kind.strip(), float(cap))
+        if set_used:
+            kind, _, value = set_used.partition("=")
+            gov.set_used(kind.strip(), float(value))
+        if record:
+            kind, _, amount = record.partition("=")
+            gov.record(kind.strip(), float(amount))
+    except (AutonomyError, ValueError) as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(1)
+
+    status = gov.status()
+    _output(
+        {"status": "ok", "governor": status},
+        lambda d: console.print(
+            f"[green]OK[/green] governor '{d['governor']['run']}' ({d['governor']['mode']}): "
+            f"soft_stop={d['governor']['soft_stop']} wrap_up={d['governor']['wrap_up']}"
+        ),
+    )
+
+
+@autonomy_app.command("findings")
+def autonomy_findings(
+    run: str = typer.Argument(..., help="Run id"),
+    file: Optional[str] = typer.Option(None, "--file", help="File one finding: LANE:SEVERITY:message|evidence"),
+    triage: bool = typer.Option(False, "--triage", help="Judge triage: >= medium routes to the debug lane"),
+    status: Optional[str] = typer.Option(None, "--status", help="Filter by status (open/triaged/dismissed)"),
+    repo: Optional[str] = typer.Option(None, "--repo", help="Git repo path"),
+):
+    """Critic-loop findings for a run: list, file one, or Judge-triage."""
+    from clawteam.autonomy import AutonomyError, CriticLoop
+
+    root = Path(repo) if repo else Path.cwd()
+    loop = CriticLoop(root, run)
+    if file:
+        try:
+            head, _, evidence = file.partition("|")
+            lane, _, rest = head.partition(":")
+            severity, _, message = rest.partition(":")
+            finding = loop.record_finding(
+                lane.strip(), severity.strip(), message.strip(), evidence.strip(),
+            )
+        except (AutonomyError, Exception) as exc:
+            console.print(f"[red]{exc}[/red]")
+            raise typer.Exit(1)
+        _output({"status": "filed", "finding": finding},
+                lambda d: console.print(f"[green]OK[/green] {d['finding']['id']} filed: {d['finding']['message'][:60]}"))
+        return
+    if triage:
+        verdict = loop.triage()
+        _output(
+            {"status": "triaged", "verdict": verdict},
+            lambda d: console.print(
+                f"[green]OK[/green] Judge triage: {len(d['verdict']['accepted'])} accepted → debug, "
+                f"{len(d['verdict']['dismissed'])} dismissed"
+            ),
+        )
+        return
+    found = loop.findings(status=status)
+    if _json_output:
+        _output({"findings": found}, lambda d: None)
+        return
+    if not found:
+        console.print(f"No findings for run '{run}'.")
+        return
+    table = Table(title=f"Critic findings — {run}")
+    table.add_column("Id")
+    table.add_column("Severity")
+    table.add_column("Lane")
+    table.add_column("Status")
+    table.add_column("Message")
+    for f in found:
+        table.add_row(f["id"], f["severity"], f["lane"], f["status"], f["message"][:50])
+    console.print(table)
+
+
+@autonomy_app.command("stuck")
+def autonomy_stuck(
+    run: str = typer.Argument(..., help="Run id"),
+    team: Optional[str] = typer.Option(None, "--team", "--team-name", "-t", help="Board team (default: run id)"),
+    minutes: float = typer.Option(20.0, "--minutes", help="Minutes without an updated_at bump = stalled"),
+    repo: Optional[str] = typer.Option(None, "--repo", help="Git repo path"),
+):
+    """Stuck-task scan (§8): stalled active tasks → reassign/respawn prompts."""
+    from clawteam.autonomy import scan_stalled
+
+    root = Path(repo) if repo else Path.cwd()
+    report = scan_stalled(root, run, team or run, stalled_after_minutes=minutes)
+    _output(
+        {"status": "ok", "report": report},
+        lambda d: console.print(
+            f"[green]OK[/green] stuck scan '{d['report']['run']}': {len(d['report']['stalled'])} stalled "
+            f"({len(d['report']['prompt']['respawn'])} respawn / {len(d['report']['prompt']['reassign'])} reassign)"
+        ),
+    )
+
+
 # ============================================================================
 # Context Commands (git context layer)
 # ============================================================================

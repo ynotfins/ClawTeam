@@ -21,8 +21,15 @@ Delta since the 2026-10-21 pass below; the original audit is preserved as the tr
    §5 caps ≤3 open / 2 options / ≤40% budget / no nesting, paired stages via
    WP2) + `clawteam autonomy decide|blocker|blockers|forks` CLI. Tests:
    `tests/test_autonomy.py` 19 passed; regression sweep CLI+stage+board+
-   workspace 58 passed. 1. **WP3** — critics/explorers/Judge loops + governors
-   (tokens/credits/wall-clock/concurrency) + stuck detection. 2. **WP5** —
+   workspace 58 passed. 1. **WP3** — **DONE (2026-10-27, Goal Mode pass 2)**:
+   `clawteam/autonomy/governors.py` (§7 budgets pro/simple, 80 % soft-stop,
+   100 % wrap-up, `check_fork` gate wired into `ForkController`),
+   `critics.py` (timer 5-min + lane-commit triggers, evidence-mandatory
+   findings, sha256 fingerprint dedupe + 30-min cooldown, Judge triage
+   ≥ medium → `debug`), `stuck.py` (§8 stall scan, active statuses,
+   reassign pending / respawn in_progress); CLI `clawteam autonomy
+   governor|findings|stuck`. Tests: `tests/test_wp3.py` 17 passed (with
+   WP4 suite 36; regression CLI+stage+board 57). 2. **WP5** —
    Keep-It-Simple global toggle + Parent Gate + `--mode simple` engine reuse.
    3. **WP6** — media presets registry + 40 presets (Dev+Consumer catalogs, KIS
    variants) + one-shot intent router + movie pipeline + new KIE adapters

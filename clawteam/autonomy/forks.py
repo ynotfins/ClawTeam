@@ -55,11 +55,16 @@ def _validate_entry(raw: dict) -> ForkLedgerEntry | None:
 
 
 class ForkController:
-    """Caps + paired stage creation for the fork-both-ways rule."""
+    """Caps + paired stage creation for the fork-both-ways rule.
 
-    def __init__(self, stage_manager: StageManager):
+    An optional `governor` (AUTONOMY_POLICY §7) gates new forks: at >= 80 % of
+    any budget the run stops opening forks/experiments; at 100 % it wraps up.
+    """
+
+    def __init__(self, stage_manager: StageManager, governor=None):
         self.stages = stage_manager
         self.repo_root = Path(stage_manager.repo_root)
+        self.governor = governor
 
     # ------------------------------------------------------------------
     # Query
@@ -97,6 +102,9 @@ class ForkController:
         """
         if option_a == option_b:
             raise AutonomyError("a fork needs two DIFFERENT options")
+
+        if self.governor is not None:
+            self.governor.check_fork()   # §7: soft-stop blocks new forks
 
         ledger = _load_ledger(self.repo_root, run)
         entries = {k: v for k, v in ledger.items() if _validate_entry(v)}
