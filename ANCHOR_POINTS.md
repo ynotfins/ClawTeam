@@ -30,6 +30,8 @@
 | A5 | The image/video **Media panel** is a first-class surface of the Board with a built-in one-shot prompt flow, powered by the user's **kie.ai API key** (`KIE_API_KEY`). `[O]` |
 | A6 | The Media panel ships **two preset catalogs** — Top 20 Developer and Top 20 Consumer — and **both catalogs carry the "Keep It Simple" toggle**. `[O]` |
 | A7 | The agent keeps **latitude** over *how* to build (language of new modules, internal structure, whether to adopt OpenHands, which refactors to do) as long as every anchor holds. `[O]` |
+| A8 | **Ship form (D-014)**: the product ships to a small family circle (2–3 recipients) as a **Windows exe that is a remote client** of the owner's PC (the "local server"). The exe is never a standalone key-holder and never ships key material. `[O]` |
+| A9 | **Commercial model (D-014)**: ClawTeam ships as a **subscription commercial app — Stripe, $1/month**. The license gate is part of the product, enforced by the server, not an afterthought. `[O]` |
 
 ## B. Platform & runtime
 
@@ -43,7 +45,11 @@
 | B6 | Reserved ports are never reassigned: 8080 bifrost · 8188 ComfyUI · 8787 openclaw ingest · **8788 Board** · 18789 OpenClaw gateway · **18790 photo host** · 3300 SwarmRecall · 55433/65432 loopback PG. New services use **18800–18899** and are registered in `docs/OPERATIONS_ADDENDUM.md`. `[V]` |
 | B6a | PG assignment: `127.0.0.1:55433` is one shared Postgres instance; AgentCore control-plane owns it and keeps its own canonical DB there (`.rules/memory-local.md`). ClawTeam gets its **own dedicated database named `clawteam`** inside that *same* instance — not a new port, not a new anchor-breaking service — or, if DB-create is blocked, a dedicated **schema** (`clawteam.*`) in AgentCore's existing DB. Only ClawTeam's own server process writes to it; no IDE SQL client, no ad-hoc psql from any agent. Creating the DB/schema is a WP2/WP6-time action by the product build, not this hygiene pass — this row is contract-only and must not be read as permission to modify the shared AgentCore Postgres instance today. `[O]` |
 | B7 | **Loopback-only.** The only publicly reachable process is the photo host (18790 via cloudflared). Board API, orchestration APIs, previews of generated apps, and any OpenHands server bind `127.0.0.1`. `[V]` |
+| B7a | **Remote-in path (D-014, extends B7 — does not weaken it)**: the distributed exe reaches Board/media/stage/extract functions **only through an authenticated tunnel** (cloudflared or Tailscale-family) to the same loopback-bound server — never a `0.0.0.0` bind (H5). Admin/key-management routes stay local, admin-auth-only; the client exposes no key surface. `[O]` |
 | B8 | Existing primitives are extended, never replaced: `clawteam task / inbox / workspace / lifecycle / runtime inject`, templates in `clawteam/templates/*.toml` and `templates/agentic-se.toml`. `[V]` |
+| B9 | **Stage layer law (WP2, shipped 2026-10-27)**: per-run stages branch as `ship/<run>/{integration, lane/<role>, fork/<id>/<option>, ab/<id>}`; worktrees root at `D:\w\<first-8-of-run>` (override `CLAWTEAM_STAGE_ROOT`); `core.longpaths` is enabled per repo; the integration branch receives merges **only** through Judge-approved `stage promote` (`clawteam/stage/`). `[V]` |
+| B10 | **Default provider profile (D-013)**: `default_profile` = **`kie`** (Claude Code on `api.kie.ai/anthropic`; key *name* `KIE_API_KEY` only, raw value into `ANTHROPIC_AUTH_TOKEN`). KIE serves **no GLM on any agent protocol** → default chat `claude-sonnet-5-5` (`claude-haiku-5-5` small-fast); the GLM-5.3 route stays `openrouter-llm` (`LLM_API_KEY`). Default video models are **MiniMax H3** (`minimax-h3/text-to-video`, `minimax-h3/image-to-video`); image kinds stay `flux1-kontext`. `[V]` |
+| B11 | **Extract panel (shipped 2026-10-27)**: 5th Board view wiring the six **local** IureOCR tools (`ocr_file`, `extract_text`, `pdf_info`, `render_page`, `edit_pdf_pages`, `ocr_languages`) via `clawteam/board/ocr_tools.py` + `/api/ocr/*`. No network, no key. `[V]` |
 
 ## C. Design law (RGDS)
 
@@ -66,6 +72,8 @@
 | D4 | Provider payloads never cross `clawteam/media/providers/`. UI sees normalized job/asset shapes. Adapters are per model family — **never one universal payload**. `[V]` |
 | D5 | **Likeness & voice safety**: uploading a person's photo or cloning a voice requires an explicit on-screen consent attestation. In Keep-It-Simple mode these actions are **local-only by default** and gated by the **Parent Gate** (see `docs/KEEP_IT_SIMPLE_SPEC.md`); nothing of a child user is published via the public photo host without Parent Gate approval. `[O]` + safety default |
 | D6 | Generated code from any agent is untrusted until it passes the gates in `docs/TESTING_AND_ACCEPTANCE.md`. Agents never run destructive commands outside their own worktree. |
+| D7 | **Key custody at distribution (D-014, extends D1/D2 to shipping)**: all provider/API keys live **only on the owner's PC** (server side, User env / server config). The shipped exe carries **zero key material** — provable by a strings scan of the build; no key in its env, config, or UI. Key rotation happens only on the owner's PC; the client can never read or change keys (no client UI surface, server rejects non-admin calls). `[O]` |
+| D8 | **Stripe licensing (D-014)**: **$1/month** subscription; `STRIPE_API_KEY` env-only (D1 law). Webhook handles `checkout.session.completed` / `customer.subscription.updated|deleted`; server tracks license states `active` / `past_due` / `canceled` with monthly expiry; the client checks license on start and periodically; unlicensed ⇒ paywall (Subscribe → Stripe Checkout). `[O]` |
 
 ## E. Media pipeline laws (implemented — preserve)
 
@@ -97,7 +105,7 @@
 
 | ID | Anchor |
 |---|---|
-| G1 | Test baseline **640 passed / 2 skipped** at handoff; it may only grow. On this machine use `--basetemp=.clawteam-local/pytest-tmp`. A previously green test gone red is the agent's regression. `[V]` |
+| G1 | Test baseline **685 tests collected (2026-10-27 audit; handoff floor was 640 passed / 2 skipped)**; it may only grow. On this machine use `--basetemp=.clawteam-local/pytest-tmp`. A previously green test gone red is the agent's regression. `[V]` |
 | G2 | The media pipeline stays stdlib-only. Any new third-party dependency needs a one-line justification in `docs/DECISION_LOG.md`. `[V]` |
 | G3 | Upstream (HKUDS) framework code is modified minimally; prefer additive modules to keep upstream merges feasible. |
 | G4 | Nothing is "shipped" while `pytest`, the RGDS literal scan, or the secret scan is red. |
@@ -126,3 +134,4 @@
 - [ ] Test count ≥ baseline and all green
 - [ ] Active Swarm dropdown entry, Keep-It-Simple toggles (Board + both catalogs), both preset catalogs still present
 - [ ] Non-obvious decisions logged in `docs/DECISION_LOG.md`
+- [ ] No key material in any distributed client build (strings scan at ship time — D7)
