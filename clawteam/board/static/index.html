@@ -617,11 +617,13 @@
         .btn-cancel { background: transparent; border: 1px solid var(--border-color); color: var(--text-secondary); padding: 10px 20px; border-radius: var(--radius-sm); cursor: pointer; transition: 0.2s;}
         .btn-cancel:hover { background: var(--chip-bg); color: var(--text-primary); }
 
-        /* View navigation (Board / Tools) */
-        .view-nav { display: flex; gap: var(--md-sys-spacing-sm, 8px); margin: 18px 0 0; }
-        .nav-btn { flex: 1; padding: 9px 12px; background: var(--raise-bg); color: var(--text-secondary);
+        /* View navigation - vertical stack, full-width touch targets (family
+           friendly; the old 5-across flex row overflowed onto Mission Control). */
+        .view-nav { display: flex; flex-direction: column; gap: var(--md-sys-spacing-sm, 12px); margin: var(--md-sys-spacing-lg, 24px) 0 0; }
+        .nav-btn { width: 100%; padding: var(--md-sys-spacing-sm, 12px) var(--md-sys-spacing-md, 16px);
+            background: var(--raise-bg); color: var(--text-secondary);
             border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer;
-            font-family: inherit; font-size: 13px; font-weight: 500; transition: 0.2s; }
+            font-family: inherit; font-size: 14px; font-weight: 500; text-align: left; transition: 0.2s; }
         .nav-btn:hover { background: var(--raise-bg-hover); color: var(--text-primary); }
         .nav-btn-active { background: var(--surface-active); color: var(--text-primary); border-color: var(--border-hover); }
 
@@ -762,6 +764,23 @@
         .nfa-latest img, .nfa-latest video { max-width: 100%; max-height: 420px; }
         .nfa-muted { color: var(--nfa-text-tertiary, var(--text-tertiary)); font-size: var(--nfa-typography-bodySmall-size, 12px); }
         .nfa-presetrow { display: flex; flex-wrap: wrap; gap: var(--nfa-spacing-xxs, 4px); }
+        /* Easy Studio (D-016): big friendly one-click tiles, Topaz-style. */
+        .easy-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--md-sys-spacing-lg, 24px); }
+        .easy-tile { background: var(--nfa-surface-card, var(--surface-color));
+            border: 1px solid var(--nfa-border-card, var(--border-color));
+            border-radius: var(--nfa-radius-card, 24px);
+            padding: var(--md-sys-spacing-lg, 24px);
+            box-shadow: var(--md-sys-elevation-level3);
+            display: flex; flex-direction: column; gap: var(--nfa-spacing-sm, 10px);
+            min-height: 180px; }
+        .easy-tile h4 { font-size: var(--md-sys-typescale-title-large-size, 20px);
+            font-weight: 600; color: var(--nfa-text-primary, var(--text-primary)); }
+        .easy-tile p { font-size: var(--md-sys-typescale-body-large-size, 16px);
+            color: var(--nfa-text-secondary, var(--text-secondary)); flex: 1; }
+        .easy-energy { display: inline-flex; align-items: center; gap: var(--nfa-spacing-xxs, 4px);
+            font-size: var(--nfa-typography-bodySmall-size, 12px);
+            color: var(--nfa-text-tertiary, var(--text-tertiary)); }
+        .easy-go { width: 100%; min-height: 44px; font-size: var(--md-sys-typescale-label-large-size, 14px); }
 
     </style>
 </head>
@@ -1076,17 +1095,28 @@
             </div>
 
             <div class="nfa-tabs" role="tablist">
+                <button class="nfa-nav-item active" id="mtab-easy" onclick="mediaTab('easy')">Easy</button>
                 <button class="nfa-nav-item" id="mtab-create" onclick="mediaTab('create')">Create</button>
                 <button class="nfa-nav-item" id="mtab-library" onclick="mediaTab('library')">Library</button>
                 <button class="nfa-nav-item" id="mtab-jobs" onclick="mediaTab('jobs')">Jobs</button>
                 <button class="nfa-nav-item" id="mtab-characters" onclick="mediaTab('characters')">Characters</button>
+                <button class="nfa-nav-item" id="mtab-3d" onclick="mediaTab('3d')">3D Studio</button>
                 <span class="nfa-spacer"></span>
                 <span class="nfa-badge" id="media-cloud-badge">cloud: checking…</span>
             </div>
             <div class="nfa-divider" role="presentation"></div>
 
-            <!-- Create tab -->
-            <div id="media-create" class="nfa-tabpane">
+            <!-- Easy Studio tab (D-016: one-click tiles for family) - DEFAULT -->
+            <div id="media-easy" class="nfa-tabpane">
+                <div class="nfa-surface" style="margin-bottom: var(--md-sys-spacing-lg, 24px);">
+                    <h3 class="nfa-title">Easy Studio</h3>
+                    <p class="nfa-muted">Pick what you want. Add your photo or type your idea. Press the button - that's it.</p>
+                </div>
+                <div class="easy-grid" id="easy-tiles"></div>
+            </div>
+
+            <!-- Create tab (advanced) -->
+            <div id="media-create" class="nfa-tabpane" style="display:none;">
                 <div class="tools-grid">
                     <div class="nfa-surface">
                         <h3 class="nfa-title">Generate</h3>
@@ -1170,7 +1200,35 @@
             </div>
         </section>
 
-        <!-- Data Extraction View (IureOCR — local Tesseract + pdfium MCP, hardcoded tools) -->
+        <!-- 3D Studio tab (D-016: Image-to-3D / rigging - provider slot DORMANT) -->
+        <div id="media-3d" class="nfa-tabpane" style="display:none;">
+            <div class="nfa-surface">
+                <h3 class="nfa-title">3D Studio</h3>
+                <p class="nfa-muted" style="margin-bottom: var(--md-sys-spacing-md, 16px);">
+                    Turn photos or video into a 3D character you can use in games and cartoons.
+                    Just add your pictures - no settings needed.</p>
+                <div class="easy-grid">
+                    <div class="easy-tile">
+                        <h4>Make My 3D Character</h4>
+                        <p>Add a few photos or a short video of the person or pet. We build a 3D model
+                           with a movable skeleton (rigging) you can pose in games and movies.</p>
+                        <span class="nfa-badge warn">Coming - one step needs the owner</span>
+                    </div>
+                    <div class="easy-tile">
+                        <h4>Why is it not ready yet?</h4>
+                        <p>The 3D building service needs its own account key, which only the owner
+                           (the family computer administrator) can turn on. Everything else keeps working,
+                           and your photos stay on this computer meanwhile.</p>
+                        <span class="easy-energy">Owner sees: enable a 3D provider key to activate</span>
+                    </div>
+                </div>
+                <p class="nfa-muted" style="margin-top: var(--md-sys-spacing-md, 16px);">
+                    When enabled, photos of real people will ask a grown-up first (Parent Gate) -
+                    that's how we keep everyone safe.</p>
+            </div>
+        </div>
+
+        <!-- Extract View (IureOCR — local Tesseract + pdfium MCP, hardcoded tools) -->
         <section class="main-content tools-view" id="extract-view" style="display:none;">
             <div class="tools-head">
                 <h2>PDF / Image Data Extraction</h2>
@@ -1676,14 +1734,132 @@
     let mediaAutoTimer = null;
 
     function mediaTab(tab) {
-        ['create', 'library', 'jobs', 'characters'].forEach((t) => {
-            document.getElementById('media-' + t).style.display = (t === tab) ? '' : 'none';
-            document.getElementById('mtab-' + t).classList.toggle('active', t === tab);
+        ['easy', 'create', 'library', 'jobs', 'characters', '3d'].forEach((t) => {
+            const pane = document.getElementById('media-' + t);
+            const btn = document.getElementById('mtab-' + t);
+            if (pane) pane.style.display = (t === tab) ? '' : 'none';
+            if (btn) btn.classList.toggle('active', t === tab);
         });
         if (tab === 'library') loadMediaAssets();
         if (tab === 'jobs') loadMediaJobs();
         if (tab === 'characters') loadCharacters();
         if (tab === 'create') refreshMediaEstimate();
+        if (tab === 'easy') loadEasyStudio();
+    }
+
+    // ---- Easy Studio (D-016): one-click Topaz-style tiles ----------------
+    let EASY_PRESETS = [];
+
+    async function loadEasyStudio() {
+        try {
+            const res = await fetch('/api/media/presets');
+            const data = await res.json();
+            EASY_PRESETS = data.presets || [];
+            renderEasyTiles();
+        } catch (e) { /* server without presets: tiles stay empty */ }
+    }
+
+    function renderEasyTiles() {
+        const wrap = document.getElementById('easy-tiles');
+        if (!wrap) return;
+        wrap.replaceChildren(...EASY_PRESETS.map((p) => {
+            const tile = document.createElement('div');
+            tile.className = 'easy-tile';
+            const h4 = document.createElement('h4'); h4.textContent = p.title;
+            const blurb = document.createElement('p'); blurb.textContent = p.blurb;
+            const energy = document.createElement('span'); energy.className = 'easy-energy';
+            energy.textContent = '\u26A1 about ' + p.est_credits + ' credits';
+            const go = document.createElement('button');
+            go.className = 'nfa-btn nfa-btn-primary easy-go'; go.textContent = 'Start';
+            go.onclick = () => easyOpen(p);
+            const body = document.createElement('div');
+            body.className = 'easy-body'; body.dataset.pid = p.id; body.style.display = 'none';
+            tile.append(h4, blurb, energy, go, body);
+            return tile;
+        }));
+    }
+
+    function easyOpen(p) {
+        const body = document.querySelector('.easy-body[data-pid="' + p.id + '"]');
+        if (!body) return;
+        body.style.display = '';
+        body.replaceChildren();
+        if (p.needs.indexOf('text') >= 0) {
+            const label = document.createElement('label');
+            label.className = 'nfa-label';
+            label.textContent = p.kind === 'edit' ? 'What should we change?' : 'What should we make? (a few words is fine)';
+            const input = document.createElement('input');
+            input.type = 'text'; input.className = 'nfa-input easy-text';
+            input.style.width = '100%';
+            body.append(label, input);
+        }
+        if (p.needs === 'image' || p.needs === 'image+text') {
+            const label = document.createElement('label');
+            label.className = 'nfa-label'; label.textContent = 'Add your photo';
+            const btn = document.createElement('button');
+            btn.className = 'nfa-btn nfa-btn-secondary';
+            btn.textContent = 'Choose photo\u2026';
+            const file = document.createElement('input');
+            file.type = 'file'; file.style.display = 'none';
+            file.accept = 'image/jpeg,image/png,image/webp';
+            const note = document.createElement('span');
+            note.className = 'nfa-muted easy-note';
+            btn.onclick = () => file.click();
+            file.onchange = (ev) => easyUpload(ev, body, note);
+            body.append(label, btn, file, note);
+        }
+        if (p.needs === 'video') {
+            const label = document.createElement('label');
+            label.className = 'nfa-label'; label.textContent = 'Paste your video link (https://\u2026)';
+            const input = document.createElement('input');
+            input.type = 'text'; input.className = 'nfa-input easy-video-url';
+            input.style.width = '100%';
+            body.append(label, input);
+        }
+        const b = document.createElement('button');
+        b.className = 'nfa-btn nfa-btn-primary easy-go';
+        b.textContent = 'Make It';
+        b.onclick = (ev) => easyRun(p, ev.target);
+        body.append(b);
+    }
+
+    async function easyUpload(ev, body, note) {
+        const f = ev.target.files && ev.target.files[0];
+        if (!f) return;
+        note.textContent = 'Sending your photo\u2026';
+        try {
+            const buf = await f.arrayBuffer();
+            const res = await fetch('/api/media/uploads?filename=' + encodeURIComponent(f.name),
+                                    { method: 'POST', body: buf });
+            const data = await res.json();
+            if (data.status === 'error') { note.textContent = 'Upload failed: ' + data.error; return; }
+            body.dataset.uploadUrl = ((data.upload || {}).url) || '';
+            note.textContent = 'Photo added \u2713';
+        } catch (e) { note.textContent = 'Upload failed - try again'; }
+    }
+
+    async function easyRun(p, btn) {
+        const body = btn.closest('.easy-body');
+        const text = (body.querySelector('.easy-text') || {}).value || '';
+        const vurl = (body.querySelector('.easy-video-url') || {}).value || '';
+        const source = vurl.trim() || (body.dataset.uploadUrl || '');
+        if ((p.needs === 'image' || p.needs === 'image+text') && !source)
+            return alert('Add your photo first');
+        if (p.needs === 'video' && !source)
+            return alert('Paste your video link first');
+        if (p.needs.indexOf('text') >= 0 && !text.trim())
+            return alert('Type a few words first');
+        const params = Object.assign({}, p.defaults || {});
+        if (source) params.source_url = source;
+        btn.disabled = true; btn.textContent = 'Working\u2026';
+        try {
+            const result = await toolsPost('/api/media/jobs',
+                { kind: p.kind, model: p.model, prompt: text || p.blurb, params, provider: 'kie' });
+            if (result.status === 'error') { alert(result.error); return; }
+            btn.textContent = 'Done \u2713';
+            loadMediaJobs(); mediaTab('jobs');
+        } catch (e) { alert('Could not start - try again'); }
+        finally { btn.disabled = false; }
     }
 
     async function loadMediaView() {

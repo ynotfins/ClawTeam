@@ -24,7 +24,7 @@ JOB_STATES = (
 TERMINAL_STATES = {"succeeded", "failed", "timed_out", "succeeded_provider_download_failed"}
 ACTIVE_STATES = {"queued", "running", "provider_succeeded", "downloading"}
 
-JOB_KINDS = ("t2img", "img2img", "edit", "t2v", "i2v", "upscale",
+JOB_KINDS = ("t2img", "img2img", "edit", "t2v", "i2v", "upscale", "vupscale",
              "character", "variant")
 
 

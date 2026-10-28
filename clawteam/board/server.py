@@ -606,6 +606,10 @@ class BoardHandler(BaseHTTPRequestHandler):
         elif path == "/api/openrouter/routing":
             routing = _routing_load()
             self._serve_json({"routing": routing, "role_docs": _ROUTING_ROLES})
+        elif path == "/api/media/presets":
+            # D-016 Easy Studio: the one-click tile catalog (E6-validated).
+            from clawteam.media.presets import load_presets
+            self._serve_json({"presets": load_presets()})
         elif path == "/api/media/providers" and self.media_router:
             self._serve_json(self.media_router.providers_status())
         elif path == "/api/media/jobs" and self.media_router:
@@ -897,6 +901,11 @@ class BoardHandler(BaseHTTPRequestHandler):
                         route=payload.get("route", "auto"),
                         requested_provider=payload.get("provider"),
                     )
+                    if payload.get("model"):
+                        # One-click presets pin their model (D-016 Easy Studio);
+                        # plan() honors an explicit model over the kind default.
+                        router.jobs.update(job["id"], model=str(payload["model"]))
+                        job = router.jobs.get(job["id"])
                     plan = router.plan(job)
                     if plan.get("error"):
                         router.jobs.update(job["id"], state="failed", error="routing: " + plan["error"])

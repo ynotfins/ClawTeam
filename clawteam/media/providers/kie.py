@@ -22,6 +22,10 @@ PRICING = {
     # model: {kind: credits} — estimates pending per-task actuals from provider
     "flux1-kontext": {"t2img": 5.0, "edit": 5.0, "img2img": 5.0},  # verified live: creditsConsumed=5.0
     "runway": {"t2v": 12.0, "i2v": 12.0},  # verified live 2026-09-23: 5s/720p creditsConsumed=12.0
+    # Topaz catalog pricing 2026-10-28: image 10cr ≤2K / 20cr 4K (factor 4);
+    # video 8cr/s at 1×/2×, 14cr/s at 4× (estimates — verified:false until live).
+    "topaz/image-upscale": {"upscale": 10.0},
+    "topaz/video-upscale": {"vupscale": 8.0},
 }
 
 # MiniMax H3 bills per generated second (catalog pricingDesc, 2026-10-25):
@@ -197,12 +201,44 @@ class MiniMaxH3ImageToVideoAdapter(_Adapter):
         return {"model": self.model, "input": inp}
 
 
+class TopazImageUpscaleAdapter(_Adapter):
+    """docs.kie.ai/market/topaz/image-upscale — Topaz-quality photo upscaling."""
+
+    model = "topaz/image-upscale"
+    kinds = ("upscale",)
+
+    def build(self, job: dict, input_asset_urls: list[str]) -> dict:
+        p = job.get("params", {})
+        inp: dict = {}
+        if input_asset_urls:
+            inp["image_url"] = input_asset_urls[0]
+        inp["upscale_factor"] = str(p.get("upscale_factor", "2"))  # "1" | "2" | "4"
+        return {"model": self.model, "input": inp}
+
+
+class TopazVideoUpscaleAdapter(_Adapter):
+    """docs.kie.ai/market/topaz/video-upscale — Topaz-quality video upscaling."""
+
+    model = "topaz/video-upscale"
+    kinds = ("vupscale",)
+
+    def build(self, job: dict, input_asset_urls: list[str]) -> dict:
+        p = job.get("params", {})
+        inp: dict = {}
+        if input_asset_urls:
+            inp["video_url"] = input_asset_urls[0]
+        inp["upscale_factor"] = str(p.get("upscale_factor", "2"))  # "1" | "2" | "4"
+        return {"model": self.model, "input": inp}
+
+
 ADAPTERS: dict[str, _Adapter] = {
     a.model: a for a in (
         FluxKontextAdapter(),
         RunwayAdapter(),
         MiniMaxH3TextToVideoAdapter(),
         MiniMaxH3ImageToVideoAdapter(),
+        TopazImageUpscaleAdapter(),
+        TopazVideoUpscaleAdapter(),
     )
 }
 
@@ -273,12 +309,17 @@ class KieProvider:
                 "note": "estimate only — verify against KIE dashboard"}
 
     def default_model_for(self, kind: str) -> str:
-        # Operator default (2026-10-25): MiniMax H3 for video kinds (audio-bearing
-        # stereo output), Flux Kontext for image kinds. Runway stays selectable.
-        if kind in ("t2v",):
+        # Operator defaults: MiniMax H3 for generation-video kinds, Topaz for
+        # upscale kinds (D-016 — "upscales like Topaz"), Flux Kontext for the
+        # remaining image kinds. Runway stays selectable.
+        if kind == "t2v":
             return "minimax-h3/text-to-video"
-        if kind in ("i2v",):
+        if kind == "i2v":
             return "minimax-h3/image-to-video"
+        if kind == "upscale":
+            return "topaz/image-upscale"
+        if kind == "vupscale":
+            return "topaz/video-upscale"
         return "flux1-kontext"
 
     def submit(self, job: dict, input_asset_urls: list[str]) -> tuple[str, str]:

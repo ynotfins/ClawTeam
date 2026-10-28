@@ -22,7 +22,7 @@ from clawteam.media.providers.kie import KieProvider
 
 # Default routing policy: local-first for safe image kinds; cloud for the rest.
 LOCAL_SAFE_KINDS = {"t2img", "img2img"}
-CLOUD_ONLY_KINDS = {"t2v", "i2v", "edit", "upscale", "character", "variant"}
+CLOUD_ONLY_KINDS = {"t2v", "i2v", "edit", "upscale", "vupscale", "character", "variant"}
 
 POLL_FAST_INTERVAL = 2.0
 POLL_FAST_TICKS = 10
