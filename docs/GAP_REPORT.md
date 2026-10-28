@@ -15,17 +15,22 @@ Delta since the 2026-10-21 pass below; the original audit is preserved as the tr
 **Milestones remaining to ship** (per `docs/BUILD_PLAN.md` §3/§3b; execution via
 `docs/GOAL_MODE_PROMPT.md`):
 
-1. **WP4** — autonomy engine (`decide()` benchmark tables, Blocker Card writer,
-   fork caps/controller). 2. **WP3** — critics/explorers/Judge loops + governors
-   (tokens/credits/wall-clock/concurrency) + stuck detection. 3. **WP5** —
+0. **WP4** — **DONE (2026-10-27, Goal Mode pass 1)**: `clawteam/autonomy/`
+   (`decide()` §6 records + DECISION_LOG mirror with `D-xxx` sequencing,
+   `write_blocker()` §3 cards + `index.json` + batched notify, `ForkController`
+   §5 caps ≤3 open / 2 options / ≤40% budget / no nesting, paired stages via
+   WP2) + `clawteam autonomy decide|blocker|blockers|forks` CLI. Tests:
+   `tests/test_autonomy.py` 19 passed; regression sweep CLI+stage+board+
+   workspace 58 passed. 1. **WP3** — critics/explorers/Judge loops + governors
+   (tokens/credits/wall-clock/concurrency) + stuck detection. 2. **WP5** —
    Keep-It-Simple global toggle + Parent Gate + `--mode simple` engine reuse.
-   4. **WP6** — media presets registry + 40 presets (Dev+Consumer catalogs, KIS
+   3. **WP6** — media presets registry + 40 presets (Dev+Consumer catalogs, KIS
    variants) + one-shot intent router + movie pipeline + new KIE adapters
-   (verify schemas at build time). 5. **WP9** — server-held key custody + remote
+   (verify schemas at build time). 4. **WP9** — server-held key custody + remote
    client (keys never in the exe; admin key rotation only from this PC).
-   6. **WP10** — Stripe **$1/month** subscription + license gating. 7. **WP11** —
+   5. **WP10** — Stripe **$1/month** subscription + license gating. 6. **WP11** —
    Windows exe packaging (`scripts/windows/build-exe.ps1`) verified on a clean
-   profile. 8. **WP8 tail** — hygiene (BLUEPRINT §2/§7 via `plan` lane,
+   profile. 7. **WP8 tail** — hygiene (BLUEPRINT §2/§7 via `plan` lane,
    `rgds.bak-1.0.1/` cleanup decision, docs-lock hash test) + `SHIP_REPORT.md`.
 
 WP7 (OpenHands spike) is decided optional (D-010) — not blocking ship.

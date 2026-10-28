@@ -3975,6 +3975,197 @@ def stage_gc(
 
 
 # ============================================================================
+# Autonomy Commands (WP4 — decide / blockers / forks)
+# ============================================================================
+
+autonomy_app = typer.Typer(help="Autonomy engine: benchmark decisions, Blocker Cards, fork ledger")
+app.add_typer(autonomy_app, name="autonomy")
+
+
+@autonomy_app.command("decide")
+def autonomy_decide(
+    question: str = typer.Argument(..., help="The decision question"),
+    run: str = typer.Argument(..., help="Run id"),
+    options: list[str] = typer.Option(..., "--option", help="Option under consideration (repeat, 1-3x)"),
+    chosen: Optional[str] = typer.Option(None, "--chosen", help="Chosen option name (default: first option)"),
+    confidence: float = typer.Option(0.5, "--confidence", help="Benchmark confidence 0..1 (<0.7 + material difference => fork)"),
+    rationale: Optional[str] = typer.Option("", "--rationale", help="One-paragraph rationale"),
+    benchmark: Optional[list[str]] = typer.Option(None, "--benchmark", help="Top-Apps row 'App=choice' (repeatable)"),
+    forked: bool = typer.Option(False, "--forked", help="Record as forked (both options being built)"),
+    repo: Optional[str] = typer.Option(None, "--repo", help="Git repo path (default: cwd)"),
+):
+    """Record a benchmark decision (AUTONOMY_POLICY §4/§6) — decide, don't ask."""
+    from clawteam.autonomy import AutonomyError, BenchmarkEntry, decide as _decide
+
+    root = Path(repo) if repo else Path.cwd()
+    bench = []
+    for row in benchmark or []:
+        app_name, _, choice = row.partition("=")
+        bench.append(BenchmarkEntry(app=app_name.strip(), choice=choice.strip()))
+    try:
+        record = _decide(
+            root, run, question, options, benchmark=bench,
+            chosen=chosen, confidence=confidence,
+            rationale=rationale or "", forked=forked,
+        )
+    except AutonomyError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(1)
+
+    _output(
+        {"status": "recorded", "decision": record.model_dump()},
+        lambda d: console.print(
+            f"[green]OK[/green] {d['decision']['id']}: {question} → "
+            f"{d['decision']['chosen'] or 'FORKED (both)'}"
+            f" (confidence {d['decision']['confidence']:.2f})"
+        ),
+    )
+
+
+@autonomy_app.command("blocker")
+def autonomy_blocker(
+    title: str = typer.Argument(..., help="One-line blocker title"),
+    run: str = typer.Argument(..., help="Run id"),
+    needed: str = typer.Option(..., "--needed", help="Exact artifact/decision needed from the owner"),
+    why: str = typer.Option(..., "--why", help="Evidence for (a)+(b)+(c) — why nothing else can proceed"),
+    continuing: str = typer.Option("", "--continuing", help="Work continuing meanwhile"),
+    ship_default: str = typer.Option("", "--ship-default", help="What ships if no reply by SHIP"),
+    repo: Optional[str] = typer.Option(None, "--repo", help="Git repo path"),
+):
+    """Write an Absolute Blocker Card (§3). The swarm never pauses on it."""
+    from clawteam.autonomy import AutonomyError, write_blocker as _write
+
+    root = Path(repo) if repo else Path.cwd()
+    try:
+        record = _write(root, run, title, needed, why, continuing, ship_default)
+    except AutonomyError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(1)
+
+    card = root / ".clawteam-local" / "runs" / run / "blockers" / f"{record.id}.md"
+    _output(
+        {"status": "carded", "blocker": record.model_dump(), "card": str(card)},
+        lambda d: console.print(
+            f"[green]OK[/green] {d['blocker']['id']} carded → {d['card']}\n"
+            f"[dim]Swarm continues: {d['blocker'].get('work_continuing') or 'all other lanes'}[/dim]"
+        ),
+    )
+
+
+@autonomy_app.command("blockers")
+def autonomy_blockers(
+    run: str = typer.Argument(..., help="Run id"),
+    repo: Optional[str] = typer.Option(None, "--repo", help="Git repo path"),
+):
+    """List Blocker Cards for a run (Board surface data)."""
+    from clawteam.autonomy import list_blockers as _list
+
+    root = Path(repo) if repo else Path.cwd()
+    cards = _list(root, run)
+    if _json_output:
+        _output({"blockers": [c.model_dump() for c in cards]}, lambda d: None)
+        return
+    if not cards:
+        console.print(f"No blocker cards for run '{run}'.")
+        return
+    table = Table(title=f"Blocker Cards — {run}")
+    table.add_column("Id")
+    table.add_column("Title")
+    table.add_column("Needed from owner")
+    table.add_column("Notified")
+    for c in cards:
+        table.add_row(c.id, c.title, c.needed_from_owner, c.notified_at or "pending")
+    console.print(table)
+
+
+@autonomy_app.command("forks")
+def autonomy_forks(
+    run: str = typer.Argument(..., help="Run id"),
+    create: bool = typer.Option(False, "--create", help="Create a fork pair (needs --decision-id, --question, --option-a, --option-b)"),
+    close: bool = typer.Option(False, "--close", help="Close a fork (needs --decision-id, --winner)"),
+    decision_id: Optional[str] = typer.Option(None, "--decision-id", help="Fork decision id (with --create/--close)"),
+    question: Optional[str] = typer.Option(None, "--question", help="Fork question (with --create)"),
+    option_a: Optional[str] = typer.Option(None, "--option-a", help="Option A name (with --create)"),
+    option_b: Optional[str] = typer.Option(None, "--option-b", help="Option B name (with --create)"),
+    winner: Optional[str] = typer.Option(None, "--winner", help="Winning option (with --close)"),
+    budget_total: Optional[float] = typer.Option(None, "--budget-total", help="Run budget (with --create, to enforce the 40% cap)"),
+    fork_budget: Optional[float] = typer.Option(None, "--fork-budget", help="Fork budget (with --create)"),
+    repo: Optional[str] = typer.Option(None, "--repo", help="Git repo path"),
+):
+    """Fork-both-ways ledger: list, create (caps enforced), or close."""
+    from clawteam.stage import get_stage_manager
+    from clawteam.autonomy import AutonomyError, ForkController, MAX_BUDGET_FRACTION, MAX_OPEN_FORKS
+
+    if create and close:
+        console.print("[red]Pick one of --create / --close (or neither to list).[/red]")
+        raise typer.Exit(1)
+
+    mgr = get_stage_manager(repo)
+    if mgr is None:
+        console.print("[red]Not in a git repo.[/red]")
+        raise typer.Exit(1)
+    controller = ForkController(mgr)
+
+    if create:
+        if not (decision_id and question and option_a and option_b):
+            console.print("[red]--create needs --decision-id, --question, --option-a, --option-b.[/red]")
+            raise typer.Exit(1)
+        try:
+            entry, stages_info = controller.create_fork_pair(
+                run, decision_id, question, option_a, option_b,
+                budget_total=budget_total, fork_budget=fork_budget,
+            )
+        except AutonomyError as exc:
+            console.print(f"[red]{exc}[/red]")
+            raise typer.Exit(1)
+        _output(
+            {"status": "forked", "fork": entry.model_dump(),
+             "stages": [s.model_dump() for s in stages_info]},
+            lambda d: console.print(
+                f"[green]OK[/green] fork '{d['fork']['decision_id']}' open → "
+                + " / ".join(d['fork']['options'])
+                + f"\n      branches ship/{run}/fork/{d['fork']['decision_id']}/{{a,b}}"
+            ),
+        )
+        return
+
+    if close:
+        if not (decision_id and winner):
+            console.print("[red]--close needs --decision-id and --winner.[/red]")
+            raise typer.Exit(1)
+        try:
+            entry = controller.close_fork(run, decision_id, winner)
+        except AutonomyError as exc:
+            console.print(f"[red]{exc}[/red]")
+            raise typer.Exit(1)
+        _output(
+            {"status": "closed", "fork": entry.model_dump()},
+            lambda d: console.print(
+                f"[green]OK[/green] fork '{d['fork']['decision_id']}' closed → winner "
+                f"{d['fork']['winner']} (loser archived)"
+            ),
+        )
+        return
+
+    entries = controller.ledger(run)
+    if _json_output:
+        _output({"forks": [e.model_dump() for e in entries]}, lambda d: None)
+        return
+    if not entries:
+        console.print(f"No forks for run '{run}' (cap {MAX_OPEN_FORKS} open, ≤{MAX_BUDGET_FRACTION:.0%} budget).")
+        return
+    table = Table(title=f"Forks — {run}")
+    table.add_column("Decision")
+    table.add_column("Question")
+    table.add_column("Options")
+    table.add_column("Winner")
+    table.add_column("Open")
+    for e in entries:
+        table.add_row(e.decision_id, e.question or "", " / ".join(e.options), e.winner or "—", "yes" if e.open else "no")
+    console.print(table)
+
+
+# ============================================================================
 # Context Commands (git context layer)
 # ============================================================================
 
