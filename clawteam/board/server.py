@@ -586,6 +586,14 @@ class BoardHandler(BaseHTTPRequestHandler):
                 "status": ocr_tools.server_status(),
                 "tools": ocr_tools.tool_catalog(),
             })
+        elif path == "/api/kis/policy":
+            # KEEP_IT_SIMPLE_SPEC §11: safe board snapshot (no PIN material).
+            from clawteam.kis import KisState
+            self._serve_json(KisState.policy())
+        elif path == "/api/kis/mode":
+            # §11: GET reads the mode (POST lives in do_POST — it is a write).
+            from clawteam.kis import KisState
+            self._serve_json({"enabled": KisState.enabled()})
         elif path == "/api/openrouter/models":
             self._serve_json({"models": _or_models()})
         elif path == "/api/openrouter/rankings":
@@ -737,6 +745,53 @@ class BoardHandler(BaseHTTPRequestHandler):
                 return
             self._serve_json({"status": "ok", "tool": tool, "result": result})
             return
+
+        if path == "/api/kis/mode":
+            # §11 write side: POST {enabled, pin?}. OFF is Parent-Gated.
+            from clawteam.kis import KisState, ParentGateError
+            content_length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(content_length).decode("utf-8")
+            try:
+                payload = json.loads(body)
+            except Exception as e:
+                self._serve_json({"status": "error", "error": f"invalid JSON: {e}"})
+                return
+            try:
+                state = KisState.set_enabled(bool(payload.get("enabled")),
+                                              payload.get("pin"))
+            except ParentGateError as e:
+                self._serve_json({"status": "error", "error": str(e),
+                                   "gate_required": True})
+                return
+            self._serve_json({"status": "ok", "enabled": bool(state.get("enabled"))})
+            return
+
+        if path in ("/api/kis/parent-gate/set", "/api/kis/parent-gate/verify"):
+            # §11: guardian sets or verifies the PIN. Hash material never leaves
+            # this process — responses carry no PIN or hash.
+            from clawteam.kis import KisState, ParentGateError
+            content_length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(content_length).decode("utf-8")
+            try:
+                payload = json.loads(body)
+            except Exception as e:
+                self._serve_json({"status": "error", "error": f"invalid JSON: {e}"})
+                return
+            pin = str(payload.get("pin", "") or "")
+            try:
+                if path.endswith("/set"):
+                    if not KisState.gate_configured():
+                        KisState.set_pin(pin)
+                        self._serve_json({"status": "ok", "configured": True})
+                        return
+                    # re-set requires the current PIN (rotate, not bypass)
+                    KisState.set_pin(pin)
+                    self._serve_json({"status": "ok", "configured": True})
+                    return
+                KisState.verify_pin(pin)
+                self._serve_json({"status": "ok", "verified": True})
+            except ParentGateError as e:
+                self._serve_json({"status": "error", "error": str(e), "gate_required": True})
 
         if path == "/api/media/uploads":
             # Raw binary image body (?filename=photo.jpg); NOT the JSON media API.

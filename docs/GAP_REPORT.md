@@ -29,9 +29,17 @@ Delta since the 2026-10-21 pass below; the original audit is preserved as the tr
    ≥ medium → `debug`), `stuck.py` (§8 stall scan, active statuses,
    reassign pending / respawn in_progress); CLI `clawteam autonomy
    governor|findings|stuck`. Tests: `tests/test_wp3.py` 17 passed (with
-   WP4 suite 36; regression CLI+stage+board 57). 2. **WP5** —
-   Keep-It-Simple global toggle + Parent Gate + `--mode simple` engine reuse.
-   3. **WP6** — media presets registry + 40 presets (Dev+Consumer catalogs, KIS
+   WP4 suite 36; regression CLI+stage+board 57). 2. **WP5** — **backend DONE
+   (2026-10-27, Goal Mode pass 3)**: `clawteam/kis/` (`state.py`: PIN stored
+   as salted **scrypt hash** in `~/.clawteam/kis.json` — never plaintext;
+   5 wrong → 5-min lockout; §6 gated actions incl. `disable_keep_it_simple`/
+   `approve_person_photo`/`approve_voice_clone`/`change_caps`; §8 caps
+   40/150/120/45/2 editable only behind the gate; §11 `policy()` snapshot
+   carries no PIN material) + board routes `GET /api/kis/policy`,
+   `GET/POST /api/kis/mode` (OFF gated), `POST /api/kis/parent-gate/set|verify`.
+   Tests: `tests/test_wp5.py` 15 passed. **Remaining UI tail**: Board header
+   toggle component + `ui.keep_it_simple` mirror + Simple view (§2 matrix) —
+   routes are live for the UI to bind. 3. **WP6** — media presets registry + 40 presets (Dev+Consumer catalogs, KIS
    variants) + one-shot intent router + movie pipeline + new KIE adapters
    (verify schemas at build time). 4. **WP9** — server-held key custody + remote
    client (keys never in the exe; admin key rotation only from this PC).
