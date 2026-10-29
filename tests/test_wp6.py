@@ -8,6 +8,7 @@ presets are validated against the live adapter registry at load time.
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
 
@@ -100,7 +101,8 @@ class TestPresets:
 
     def test_rejects_duplicate_ids_and_missing_titles(self):
         base = {"title": "t", "blurb": "b", "kind": "upscale",
-                "model": "topaz/image-upscale", "needs": "image"}
+                "model": "topaz/image-upscale", "needs": "image",
+                "example": "a crisp bigger photo"}
         with pytest.raises(PresetError, match="duplicated"):
             validate_presets([{**base, "id": "x"}, {**base, "id": "x"}])
         with pytest.raises(PresetError, match="title and blurb"):
@@ -148,3 +150,24 @@ class TestPresetsRoute:
         assert {"sharper-photo", "sharper-video", "make-picture"} <= ids
         # every preset on the wire is E6-validated
         validate_presets(data["presets"])
+
+class TestBuddyGuide:
+    """D-018: every family panel shows checklist, uploads, progress, examples."""
+
+    def test_every_preset_has_example_text(self):
+        for p in load_presets():
+            assert p.get("example"), f"preset '{p['id']}' missing example (D-018)"
+
+    def test_validator_rejects_missing_example(self):
+        with pytest.raises(PresetError, match="example"):
+            validate_presets([{"id": "x", "title": "t", "blurb": "b",
+                               "kind": "upscale", "model": "topaz/image-upscale",
+                               "needs": "image"}])
+
+    def test_board_has_buddy_surfaces(self):
+        html = Path("clawteam/board/static/index.html").read_text(encoding="utf-8")
+        for marker in ("buddy-steps", "buddy-uploads", "buddy-progress",
+                       "buddy-bar-fill", "buddy-examples", "buddyTrack",
+                       "What we need from you", "What you gave us",
+                       "Here is what it can look like", "threed-progress"):
+            assert marker in html, f"missing buddy surface: {marker}"

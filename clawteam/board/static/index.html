@@ -781,6 +781,47 @@
             font-size: var(--nfa-typography-bodySmall-size, 12px);
             color: var(--nfa-text-tertiary, var(--text-tertiary)); }
         .easy-go { width: 100%; min-height: 44px; font-size: var(--md-sys-typescale-label-large-size, 14px); }
+        /* Buddy guide (D-018): kid-friendly checklist, thumbs, live progress. */
+        .buddy-steps { display: flex; flex-direction: column; gap: var(--nfa-spacing-xxs, 4px); }
+        .buddy-step { display: flex; align-items: center; gap: var(--nfa-spacing-xs, 8px);
+            padding: var(--nfa-spacing-xxs, 4px) var(--nfa-spacing-sm, 10px);
+            border: 1px solid var(--nfa-border-default, var(--border-color));
+            border-radius: var(--nfa-radius-chip, 13px);
+            font-size: var(--nfa-typography-bodyMedium-size, 15px);
+            color: var(--nfa-text-secondary, var(--text-secondary));
+            flex-wrap: wrap; }
+        .buddy-step.done { border-color: var(--nfa-status-success, var(--color-completed));
+            color: var(--nfa-text-primary, var(--text-primary)); }
+        .buddy-mark { font-weight: 700; }
+        .buddy-uploads, .buddy-exrow { display: flex; flex-wrap: wrap; gap: var(--nfa-spacing-xs, 8px);
+            align-items: center; }
+        .buddy-thumb { width: 64px; height: 64px; object-fit: cover;
+            border-radius: var(--nfa-radius-chip, 13px);
+            border: 1px solid var(--nfa-border-card, var(--border-color)); }
+        .buddy-chip { display: inline-flex; align-items: center; gap: var(--nfa-spacing-xxs, 4px);
+            padding: var(--nfa-spacing-xxs, 4px) var(--nfa-spacing-sm, 10px);
+            border-radius: var(--nfa-radius-chip, 13px);
+            border: 1px solid var(--nfa-border-default, var(--border-color));
+            font-size: var(--nfa-typography-bodySmall-size, 12px);
+            color: var(--nfa-text-secondary, var(--text-secondary));
+            max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .buddy-progress { display: none; flex-direction: column; gap: var(--nfa-spacing-xxs, 4px);
+            padding: var(--nfa-spacing-sm, 10px) var(--nfa-spacing-md, 16px);
+            border: 1px solid var(--nfa-border-card, var(--border-color));
+            border-radius: var(--nfa-radius-chip, 13px);
+            background: var(--nfa-surface-secondaryContainer, var(--sink-bg)); }
+        .buddy-progress.on { display: flex; }
+        .buddy-bar { height: 10px; border-radius: var(--nfa-radius-chip, 13px);
+            background: var(--nfa-surface-canvas, var(--bg-color));
+            border: 1px solid var(--nfa-border-default, var(--border-color));
+            overflow: hidden; }
+        .buddy-bar-fill { height: 100%; width: 0%;
+            background: var(--nfa-action-primary, var(--color-progress));
+            transition: width 0.6s ease; }
+        .buddy-pct { font-size: var(--md-sys-typescale-title-large-size, 20px); font-weight: 700;
+            color: var(--nfa-text-primary, var(--text-primary)); }
+        .buddy-doing { font-size: var(--nfa-typography-bodyMedium-size, 15px);
+            color: var(--nfa-text-secondary, var(--text-secondary)); }
 
     </style>
 </head>
@@ -1212,14 +1253,25 @@
                         <h4>Make My 3D Character</h4>
                         <p>Add one clear photo of the person or pet, give them a name, and press
                            the button. We build a movable 3D character and check it matches the photo.</p>
-                        <label class="nfa-label">Character name</label>
-                        <input type="text" id="threed-name" class="nfa-input" style="width:100%;" placeholder="e.g. Maya">
-                        <label class="nfa-label">Photo</label>
-                        <button class="nfa-btn nfa-btn-secondary" onclick="document.getElementById('threed-file').click()">Choose photo&hellip;</button>
-                        <input type="file" id="threed-file" accept="image/jpeg,image/png,image/webp" style="display:none;">
+                        <div class="nfa-label">What we need from you</div>
+                        <div class="buddy-steps" id="threed-steps">
+                            <div class="buddy-step" data-key="name"><span class="buddy-mark">○</span><span>Your character's name (so we can save it)</span>
+                                <input type="text" id="threed-name" class="nfa-input" style="width:100%;" placeholder="e.g. Maya" oninput="buddy3dRefresh()"></div>
+                            <div class="buddy-step" data-key="image"><span class="buddy-mark">○</span><span>One clear photo, facing us, good light on hands and shoes</span>
+                                <button class="nfa-btn nfa-btn-secondary" onclick="document.getElementById('threed-file').click()">Choose photo&hellip;</button>
+                                <input type="file" id="threed-file" accept="image/jpeg,image/png,image/webp" style="display:none;"></div>
+                        </div>
+                        <div class="nfa-label">What you gave us</div>
+                        <div class="buddy-uploads" id="threed-uploads"></div>
+                        <div class="buddy-examples" id="threed-examples"></div>
                         <span class="nfa-muted" id="threed-note"></span>
                         <span class="easy-energy" id="threed-energy">⚡ about $0.70</span>
-                        <button class="nfa-btn nfa-btn-primary easy-go" onclick="threedRun()">Make My 3D Character</button>
+                        <div class="buddy-progress" id="threed-progress">
+                            <span class="buddy-pct">5%</span>
+                            <div class="buddy-bar"><div class="buddy-bar-fill"></div></div>
+                            <span class="buddy-doing">Getting ready…</span>
+                        </div>
+                        <button class="nfa-btn nfa-btn-primary easy-go" data-role="3dgo" onclick="threedRun()">Make My 3D Character</button>
                     </div>
                     <div class="easy-tile">
                         <h4>After it's done</h4>
@@ -1783,68 +1835,291 @@
         }));
     }
 
+    // ---- Buddy guide (D-018): what we need, what you gave us, live progress ----
+    function buddyStepsFor(p) {
+        const steps = [];
+        if (p.needs === 'image' || p.needs === 'image+text')
+            steps.push({ key: 'image', label: (p.kind === 'upscale' || p.kind === 'edit')
+                ? 'Add the photo you want sharper or changed'
+                : 'Add the photo to use' });
+        if (p.needs === 'video')
+            steps.push({ key: 'video', label: 'Paste your video link (from your phone or computer)' });
+        if (p.needs.indexOf('text') >= 0)
+            steps.push({ key: 'text', label: p.kind === 'edit'
+                ? 'Type what should change (keep everything else the same)'
+                : 'Type what you want to see (a few words is fine)' });
+        return steps;
+    }
+
+    function buddyLabel(p) {
+        return (p.kind === 'upscale' || p.kind === 'vupscale') ? 'Make It Sharper' : 'Make It';
+    }
+
+    function buddyThumb(src, alt) {
+        const img = document.createElement('img');
+        img.src = src; img.alt = alt; img.className = 'buddy-thumb';
+        return img;
+    }
+
+    function buddyChip(text) {
+        const s = document.createElement('span');
+        s.className = 'buddy-chip'; s.textContent = text;
+        return s;
+    }
+
+    function buddyRefresh(body, p) {
+        body.querySelectorAll('.buddy-step').forEach((el) => {
+            const key = el.dataset.key;
+            let done = false;
+            if (key === 'image') done = !!body.dataset.uploadUrl;
+            if (key === 'video') done = !!((body.querySelector('.easy-video-url') || {}).value || '').trim();
+            if (key === 'text') done = !!((body.querySelector('.easy-text') || {}).value || '').trim();
+            el.classList.toggle('done', done);
+            const mark = el.querySelector('.buddy-mark');
+            if (mark) mark.textContent = done ? '\u2713' : '\u25CB';
+        });
+        const strip = body.querySelector('.buddy-uploads');
+        if (strip) {
+            strip.replaceChildren();
+            if (body.dataset.uploadUrl)
+                strip.append(buddyThumb(body.dataset.uploadUrl, 'The photo you added'));
+            const vurl = ((body.querySelector('.easy-video-url') || {}).value || '').trim();
+            if (vurl) strip.append(buddyChip('\u25B6 ' + vurl.slice(0, 48)));
+        }
+        const go = body.querySelector('.easy-go[data-role="go"]');
+        if (go) {
+            const missing = body.querySelectorAll('.buddy-step:not(.done)').length;
+            go.disabled = missing > 0;
+            go.textContent = missing > 0
+                ? (missing === 1 ? 'One more thing \u2014 you can do it!'
+                                 : 'A couple more things \u2014 keep going!')
+                : buddyLabel(p);
+        }
+    }
+
+    let EXAMPLES = null;
+    async function loadExamples() {
+        if (EXAMPLES) return EXAMPLES;
+        try {
+            const res = await fetch('/api/media/assets');
+            const data = await res.json();
+            EXAMPLES = (data.assets || [])
+                .filter((a) => a.kind === 'image' || a.kind === 'video').slice(0, 3);
+        } catch (e) { EXAMPLES = []; }
+        return EXAMPLES;
+    }
+
+    async function fillExamples(container, fallbackText) {
+        if (!container) return;
+        container.replaceChildren();
+        const label = document.createElement('div');
+        label.className = 'nfa-label';
+        label.textContent = 'Here is what it can look like';
+        container.append(label);
+        const ex = await loadExamples();
+        if (ex.length) {
+            const row = document.createElement('div');
+            row.className = 'buddy-exrow';
+            ex.forEach((a) => row.append(buddyThumb(
+                '/api/media/assets/' + a.id + '/file', 'Example ' + a.kind)));
+            container.append(row);
+        } else {
+            const t = document.createElement('p');
+            t.className = 'nfa-muted';
+            t.textContent = fallbackText;
+            container.append(t);
+        }
+    }
+
+    function buddyProgressMount() {
+        const wrap = document.createElement('div');
+        wrap.className = 'buddy-progress';
+        const pct = document.createElement('span');
+        pct.className = 'buddy-pct'; pct.textContent = '5%';
+        const bar = document.createElement('div');
+        bar.className = 'buddy-bar';
+        const fill = document.createElement('div');
+        fill.className = 'buddy-bar-fill';
+        bar.append(fill);
+        const doing = document.createElement('span');
+        doing.className = 'buddy-doing'; doing.textContent = 'Getting ready\u2026';
+        wrap.append(pct, bar, doing);
+        return wrap;
+    }
+
+    function jobProgress(job) {
+        const s = job && job.state;
+        if (!s) return { pct: 5, doing: 'Getting ready\u2026' };
+        if (s === 'succeeded')
+            return { pct: 100, doing: 'All done! Your creation is saved in the library \u2713' };
+        if (s === 'failed' || s === 'timed_out' || s === 'succeeded_provider_download_failed')
+            return { pct: 100, doing: 'We hit a snag \u2014 a grown-up can peek at the Jobs tab.' };
+        const t = job._3d;
+        if (t) {
+            if (t.generate && t.generate.model_url && t.rig)
+                return { pct: 80, doing: 'Checking it looks like your photo\u2026' };
+            if (t.generate && t.generate.model_url)
+                return { pct: 60, doing: 'Adding a movable skeleton to your character\u2026' };
+            return { pct: 40, doing: 'Sculpting your 3D character from the photo\u2026' };
+        }
+        if (s === 'queued') return { pct: 25, doing: 'Waiting in line\u2026' };
+        if (s === 'running')
+            return { pct: 60, doing: 'Making it for you\u2026 (this can take a few minutes)' };
+        if (s === 'downloading' || s === 'provider_succeeded')
+            return { pct: 90, doing: 'Saving it to your library\u2026' };
+        return { pct: 15, doing: 'Working\u2026' };
+    }
+
+    function buddyTrack(jobId, mount, onDone) {
+        const pct = mount.querySelector('.buddy-pct');
+        const doing = mount.querySelector('.buddy-doing');
+        const bar = mount.querySelector('.buddy-bar-fill');
+        let stopped = false;
+        async function tick() {
+            try {
+                const res = await fetch('/api/media/jobs/' + jobId);
+                const job = await res.json();
+                const pr = jobProgress(job);
+                if (pct) pct.textContent = pr.pct + '%';
+                if (doing) doing.textContent = pr.doing;
+                if (bar) bar.style.width = pr.pct + '%';
+                if (['succeeded', 'failed', 'timed_out',
+                     'succeeded_provider_download_failed'].includes(job.state)) {
+                    stopped = true;
+                    if (onDone) onDone(job);
+                }
+            } catch (e) { /* transient poll failure: keep watching */ }
+            if (!stopped) setTimeout(tick, 3000);
+        }
+        tick();
+    }
+
     function easyOpen(p) {
         const body = document.querySelector('.easy-body[data-pid="' + p.id + '"]');
         if (!body) return;
         body.style.display = '';
         body.replaceChildren();
-        if (p.needs.indexOf('text') >= 0) {
-            const label = document.createElement('label');
-            label.className = 'nfa-label';
-            label.textContent = p.kind === 'edit' ? 'What should we change?' : 'What should we make? (a few words is fine)';
-            const input = document.createElement('input');
-            input.type = 'text'; input.className = 'nfa-input easy-text';
-            input.style.width = '100%';
-            body.append(label, input);
-        }
-        if (p.needs === 'image' || p.needs === 'image+text') {
-            const label = document.createElement('label');
-            label.className = 'nfa-label'; label.textContent = 'Add your photo';
-            const btn = document.createElement('button');
-            btn.className = 'nfa-btn nfa-btn-secondary';
-            btn.textContent = 'Choose photo\u2026';
-            const file = document.createElement('input');
-            file.type = 'file'; file.style.display = 'none';
-            file.accept = 'image/jpeg,image/png,image/webp';
-            const note = document.createElement('span');
-            note.className = 'nfa-muted easy-note';
-            btn.onclick = () => file.click();
-            file.onchange = (ev) => easyUpload(ev, body, note);
-            body.append(label, btn, file, note);
-        }
-        if (p.needs === 'video') {
-            const label = document.createElement('label');
-            label.className = 'nfa-label'; label.textContent = 'Paste your video link (https://\u2026)';
-            const input = document.createElement('input');
-            input.type = 'text'; input.className = 'nfa-input easy-video-url';
-            input.style.width = '100%';
-            body.append(label, input);
-        }
+
+        const needLabel = document.createElement('div');
+        needLabel.className = 'nfa-label';
+        needLabel.textContent = 'What we need from you';
+        body.append(needLabel);
+
+        const steps = document.createElement('div');
+        steps.className = 'buddy-steps';
+        buddyStepsFor(p).forEach((st) => {
+            const row = document.createElement('div');
+            row.className = 'buddy-step'; row.dataset.key = st.key;
+            const mark = document.createElement('span');
+            mark.className = 'buddy-mark'; mark.textContent = '\u25CB';
+            const lbl = document.createElement('span');
+            lbl.textContent = st.label;
+            row.append(mark, lbl);
+
+            if (st.key === 'text') {
+                const input = document.createElement('input');
+                input.type = 'text'; input.className = 'nfa-input easy-text';
+                input.style.width = '100%';
+                input.placeholder = 'e.g. a happy corgi in a spacesuit';
+                input.oninput = () => buddyRefresh(body, p);
+                row.append(input);
+            }
+            if (st.key === 'video') {
+                const input = document.createElement('input');
+                input.type = 'text'; input.className = 'nfa-input easy-video-url';
+                input.style.width = '100%';
+                input.placeholder = 'https\u2026 (right-click here and choose Paste)';
+                input.oninput = () => buddyRefresh(body, p);
+                row.append(input);
+            }
+            if (st.key === 'image') {
+                const btn = document.createElement('button');
+                btn.className = 'nfa-btn nfa-btn-secondary';
+                btn.textContent = 'Choose photo\u2026';
+                const file = document.createElement('input');
+                file.type = 'file'; file.style.display = 'none';
+                file.accept = 'image/jpeg,image/png,image/webp';
+                btn.onclick = () => file.click();
+                file.onchange = (ev) => easyUpload(ev, body, p);
+                row.append(btn, file);
+            }
+            steps.append(row);
+        });
+        body.append(steps);
+
+        const upLabel = document.createElement('div');
+        upLabel.className = 'nfa-label';
+        upLabel.textContent = 'What you gave us';
+        const strip = document.createElement('div');
+        strip.className = 'buddy-uploads';
+        body.append(upLabel, strip);
+
+        const ex = document.createElement('div');
+        ex.className = 'buddy-examples';
+        body.append(ex);
+        fillExamples(ex, ((p.example || '') + ' ').trim() +
+            'Your first creation will show up here too \u2014 press the button to try it!');
+
+        body.append(buddyProgressMount());
+
         const b = document.createElement('button');
         b.className = 'nfa-btn nfa-btn-primary easy-go';
-        b.textContent = 'Make It';
+        b.dataset.role = 'go';
+        b.textContent = buddyLabel(p);
         b.onclick = (ev) => easyRun(p, ev.target);
         body.append(b);
+        buddyRefresh(body, p);
     }
 
-    async function easyUpload(ev, body, note) {
+    async function easyUpload(ev, body, p) {
         const f = ev.target.files && ev.target.files[0];
         if (!f) return;
-        note.textContent = 'Sending your photo\u2026';
         try {
             const buf = await f.arrayBuffer();
             const res = await fetch('/api/media/uploads?filename=' + encodeURIComponent(f.name),
                                     { method: 'POST', body: buf });
             const data = await res.json();
-            if (data.status === 'error') { note.textContent = 'Upload failed: ' + data.error; return; }
+            if (data.status === 'error') {
+                delete body.dataset.uploadUrl;
+                alert('The photo did not go through: ' + data.error + ' \u2014 try another photo.');
+                buddyRefresh(body, p);
+                return;
+            }
             body.dataset.uploadUrl = ((data.upload || {}).url) || '';
-            note.textContent = 'Photo added \u2713';
-        } catch (e) { note.textContent = 'Upload failed - try again'; }
+            buddyRefresh(body, p);
+        } catch (e) {
+            alert('The photo did not go through \u2014 let\u2019s try that again.');
+            buddyRefresh(body, p);
+        }
+    }
+
+    function buddy3dRefresh() {
+        const name = ((document.getElementById('threed-name') || {}).value || '').trim();
+        document.querySelectorAll('#threed-steps .buddy-step').forEach((el) => {
+            const key = el.dataset.key;
+            const done = (key === 'name') ? !!name : !!THREED_URL;
+            el.classList.toggle('done', done);
+            const mark = el.querySelector('.buddy-mark');
+            if (mark) mark.textContent = done ? '\u2713' : '\u25CB';
+        });
+        const strip = document.getElementById('threed-uploads');
+        if (strip) {
+            strip.replaceChildren();
+            if (THREED_URL) strip.append(buddyThumb(THREED_URL, 'The photo you added'));
+        }
+        const go = document.querySelector('.easy-go[data-role="3dgo"]');
+        if (go) {
+            const missing = document.querySelectorAll('#threed-steps .buddy-step:not(.done)').length;
+            go.disabled = missing > 0;
+            go.textContent = missing > 0
+                ? (missing === 1 ? 'One more thing \u2014 you can do it!' : 'A couple more things \u2014 keep going!')
+                : 'Make My 3D Character';
+        }
     }
 
     async function threedUpload(ev) {
         const f = ev.target.files && ev.target.files[0];
-        if (!f) return;
+        if (!f) return '';
         const note = document.getElementById('threed-note');
         note.textContent = 'Sending your photo\u2026';
         try {
@@ -1859,7 +2134,12 @@
     }
     let THREED_URL = '';
     document.addEventListener('change', async (ev) => {
-        if (ev.target && ev.target.id === 'threed-file') THREED_URL = await threedUpload(ev);
+        if (ev.target && ev.target.id === 'threed-file') {
+            THREED_URL = await threedUpload(ev);
+            buddy3dRefresh();
+            fillExamples(document.getElementById('threed-examples'),
+                'A movable 3D person or pet that looks like your photo. Your first one will show here too!');
+        }
     });
 
     async function threedRun() {
@@ -1873,8 +2153,19 @@
                 { kind: 'to3d', prompt: '3D character from photo',
                   params: { name: name.trim(), source_url: THREED_URL }, provider: 'fal' });
             if (result.status === 'error') { alert(result.error); btn.textContent = 'Make My 3D Character'; return; }
-            btn.textContent = 'Done \u2713 - see it in Characters';
-            loadCharacters(); mediaTab('characters');
+            const mount = document.getElementById('threed-progress');
+            if (mount) {
+                mount.classList.add('on');
+                buddyTrack(result.job.id, mount, (job) => {
+                    btn.disabled = false;
+                    btn.textContent = job.state === 'succeeded'
+                        ? 'Done \u2713 \u2014 see Characters' : 'Try again';
+                    loadCharacters();
+                });
+            } else {
+                btn.textContent = 'Done \u2713 - see it in Characters';
+                loadCharacters(); mediaTab('characters');
+            }
         } catch (e) { alert('Could not start - try again'); }
         finally { btn.disabled = false; }
     }
@@ -1896,9 +2187,21 @@
         try {
             const result = await toolsPost('/api/media/jobs',
                 { kind: p.kind, model: p.model, prompt: text || p.blurb, params, provider: 'kie' });
-            if (result.status === 'error') { alert(result.error); return; }
-            btn.textContent = 'Done \u2713';
-            loadMediaJobs(); mediaTab('jobs');
+            if (result.status === 'error') { alert(result.error); btn.textContent = 'Make It'; return; }
+            const body = btn.closest('.easy-body');
+            const mount = body && body.querySelector('.buddy-progress');
+            btn.textContent = 'Working\u2026';
+            if (mount) {
+                mount.classList.add('on');
+                buddyTrack(result.job.id, mount, (job) => {
+                    btn.disabled = false;
+                    btn.textContent = job.state === 'succeeded'
+                        ? 'Done \u2713 \u2014 see Jobs' : 'Try again';
+                    loadMediaJobs();
+                });
+            } else {
+                loadMediaJobs(); mediaTab('jobs');
+            }
         } catch (e) { alert('Could not start - try again'); }
         finally { btn.disabled = false; }
     }

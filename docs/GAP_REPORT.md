@@ -48,7 +48,10 @@ Delta since the 2026-10-21 pass below; the original audit is preserved as the tr
    tab live (name + photo → Make My 3D Character → Characters → movie via
    existing i2v lane). Tests: `tests/test_wp7.py` 18 passed; regression 137.
    Pending: operator live E2E (~$0.70 real credits) flips pricing verified
-   flags. 3. **WP6** — media presets registry + 40 presets (Dev+Consumer catalogs, KIS
+ flags. **Buddy guide — DONE (2026-10-29, D-018)**: every Easy tile +
+   3D Studio has checklist-gated buttons, uploaded-thumbs strip, library
+   example strip, live %-progress with plain-language status (incl. 3D
+   stages). Tests 140 green. 3. **WP6** — media presets registry + 40 presets (Dev+Consumer catalogs, KIS
    variants) + one-shot intent router + movie pipeline + new KIE adapters
    (verify schemas at build time). 4. **WP9** — server-held key custody + remote
    client (keys never in the exe; admin key rotation only from this PC).

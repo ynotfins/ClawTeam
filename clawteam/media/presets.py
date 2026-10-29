@@ -10,7 +10,7 @@ covered by a verified adapter in `clawteam.media.providers.kie.ADAPTERS`,
 so a schema drift or a typo can never reach the family UI.
 
 Preset shape (MEDIA_PRESETS_CATALOG.md lineage):
-  {id, title, blurb, kind, model, needs, defaults, est_credits, one_click}
+  {id, title, blurb, example, kind, model, needs, defaults, est_credits, one_click}
   needs: "text" (prompt box) | "image" (photo drop) | "video" (clip drop)
          | "image+text" | "none"
 """
@@ -38,6 +38,7 @@ BUILTIN_PRESETS: list[dict] = [
         "defaults": {"upscale_factor": "2"},
         "est_credits": 10.0,
         "one_click": True,
+        "example": "A crisp, bigger version of the same photo - sharp enough to print.",
     },
     {
         "id": "sharper-video",
@@ -49,6 +50,7 @@ BUILTIN_PRESETS: list[dict] = [
         "defaults": {"upscale_factor": "2"},
         "est_credits": 48.0,   # ~8cr/s x 6s clip; per-second billing shown before submit
         "one_click": True,
+        "example": "The same video, but clear and sharp on a big TV.",
     },
     {
         "id": "make-picture",
@@ -60,6 +62,7 @@ BUILTIN_PRESETS: list[dict] = [
         "defaults": {"aspect_ratio": "1:1", "output_format": "png"},
         "est_credits": 5.0,
         "one_click": True,
+        "example": "A brand-new picture of whatever you typed - like magic.",
     },
     {
         "id": "change-photo",
@@ -71,6 +74,7 @@ BUILTIN_PRESETS: list[dict] = [
         "defaults": {},
         "est_credits": 5.0,
         "one_click": True,
+        "example": "Your same photo with only the change you asked for.",
     },
     {
         "id": "make-video",
@@ -82,6 +86,7 @@ BUILTIN_PRESETS: list[dict] = [
         "defaults": {"aspect_ratio": "16:9", "duration": 6, "resolution": "2K"},
         "est_credits": 78.0,   # 13cr/s x 6s at 2K
         "one_click": True,
+        "example": "A short video with sound, of exactly what you typed.",
     },
     {
         "id": "photo-to-video",
@@ -93,6 +98,7 @@ BUILTIN_PRESETS: list[dict] = [
         "defaults": {"duration": 6, "resolution": "2K"},
         "est_credits": 78.0,
         "one_click": True,
+        "example": "Your photo comes alive as a short video that moves and sounds real.",
     },
 ]
 
@@ -124,6 +130,8 @@ def validate_presets(presets: list[dict] | None = None) -> list[dict]:
             raise PresetError(f"preset '{pid}': unknown needs '{p.get('needs')}'")
         if not p.get("title") or not p.get("blurb"):
             raise PresetError(f"preset '{pid}': family UI needs a title and blurb")
+        if not p.get("example"):
+            raise PresetError(f"preset '{pid}': family UI needs an example (D-018)")
     return presets
 
 
