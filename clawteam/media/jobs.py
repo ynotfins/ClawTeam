@@ -25,7 +25,7 @@ TERMINAL_STATES = {"succeeded", "failed", "timed_out", "succeeded_provider_downl
 ACTIVE_STATES = {"queued", "running", "provider_succeeded", "downloading"}
 
 JOB_KINDS = ("t2img", "img2img", "edit", "t2v", "i2v", "upscale", "vupscale",
-             "character", "variant")
+             "character", "variant", "to3d", "prep3d", "rig3d")
 
 
 def media_dir() -> Path:

@@ -39,7 +39,16 @@ Delta since the 2026-10-21 pass below; the original audit is preserved as the tr
    `GET/POST /api/kis/mode` (OFF gated), `POST /api/kis/parent-gate/set|verify`.
    Tests: `tests/test_wp5.py` 15 passed. **Remaining UI tail**: Board header
    toggle component + `ui.keep_it_simple` mirror + Simple view (§2 matrix) —
-   routes are live for the UI to bind. 3. **WP6** — media presets registry + 40 presets (Dev+Consumer catalogs, KIS
+   routes are live for the UI to bind. **3D Studio — DONE (2026-10-28, D-017,
+   operator "don't stop building" pass)**: `clawteam/media/providers/fal.py`
+   (queue API, Key-auth, tripo3d/h3.1 image-to-3d + meshy rigging + rembg
+   adapters, E6-verified schemas), `openrouter_qa.py` (gemini-2.5-pro
+   forensic vision QA, strict-JSON verdict), `threed.py` (generate → rig →
+   QA-with-auto-heal → Character attach); kinds to3d/prep3d/rig3d; 3D Studio
+   tab live (name + photo → Make My 3D Character → Characters → movie via
+   existing i2v lane). Tests: `tests/test_wp7.py` 18 passed; regression 137.
+   Pending: operator live E2E (~$0.70 real credits) flips pricing verified
+   flags. 3. **WP6** — media presets registry + 40 presets (Dev+Consumer catalogs, KIS
    variants) + one-shot intent router + movie pipeline + new KIE adapters
    (verify schemas at build time). 4. **WP9** — server-held key custody + remote
    client (keys never in the exe; admin key rotation only from this PC).

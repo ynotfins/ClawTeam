@@ -18,11 +18,13 @@ from clawteam.media.assets import AssetStore
 from clawteam.media.jobs import MediaJobStore, ACTIVE_STATES, TERMINAL_STATES
 from clawteam.media.providers.base import ProviderResult
 from clawteam.media.providers.comfyui_local import ComfyUiLocalProvider, KIND_TIMEOUT_SECONDS
+from clawteam.media.providers.fal import FalProvider
 from clawteam.media.providers.kie import KieProvider
 
 # Default routing policy: local-first for safe image kinds; cloud for the rest.
 LOCAL_SAFE_KINDS = {"t2img", "img2img"}
-CLOUD_ONLY_KINDS = {"t2v", "i2v", "edit", "upscale", "vupscale", "character", "variant"}
+CLOUD_ONLY_KINDS = {"t2v", "i2v", "edit", "upscale", "vupscale", "character",
+                    "variant", "to3d", "prep3d", "rig3d"}
 
 POLL_FAST_INTERVAL = 2.0
 POLL_FAST_TICKS = 10
@@ -36,11 +38,13 @@ class MediaRouter:
     def __init__(self, job_store: MediaJobStore | None = None,
                  asset_store: AssetStore | None = None,
                  local: ComfyUiLocalProvider | None = None,
-                 cloud: KieProvider | None = None):
+                 cloud: KieProvider | None = None,
+                 fal: FalProvider | None = None):
         self.jobs = job_store or MediaJobStore()
         self.assets = asset_store or AssetStore()
         self.local = local or ComfyUiLocalProvider()
         self.cloud = cloud or KieProvider()
+        self.fal = fal or FalProvider()
         self._worker: threading.Thread | None = None
         self._stop = threading.Event()
         self._last_cloud_submit = 0.0
@@ -51,6 +55,7 @@ class MediaRouter:
         return {
             "local": {"name": self.local.name, **self.local.capabilities(), "health": self.local.health()},
             "cloud": {"name": self.cloud.name, **self.cloud.capabilities(), "health": self.cloud.health()},
+            "fal": {"name": self.fal.name, **self.fal.capabilities(), "health": self.fal.health()},
         }
 
     def plan(self, job: dict) -> dict:
@@ -59,6 +64,15 @@ class MediaRouter:
         requested = job.get("requested_provider")
         local_ok = self.local.health()["ok"] and kind in LOCAL_SAFE_KINDS
         cloud_ok = self.cloud.health()["ok"]
+        fal_kinds = set(self.fal.capabilities()["kinds"])
+
+        if kind in fal_kinds and requested != "kie":
+            # 3D lane (D-017): fal owns prep3d/to3d/rig3d end to end.
+            if not self.fal.health()["ok"]:
+                return {"error": "3D unavailable: " + str(self.fal.health().get("detail"))}
+            model = job.get("model") or self.fal.default_model_for(kind)
+            return {"provider": self.fal.name, "model": model,
+                    "estimate": self.fal.estimate(kind, model, job.get("params", {}))}
 
         if requested == "comfyui-local":
             if kind not in LOCAL_SAFE_KINDS:
@@ -136,6 +150,10 @@ class MediaRouter:
             if state == "queued":
                 if job.get("kind") == "character":
                     self._run_character_pipeline(job)
+                    continue
+                if job.get("kind") == "to3d":
+                    from clawteam.media.threed import ThreeDPipeline
+                    ThreeDPipeline(self).run(job)
                     continue
                 self._submit(job)
             elif state == "running":

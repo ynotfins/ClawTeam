@@ -1200,31 +1200,35 @@
             </div>
         </section>
 
-        <!-- 3D Studio tab (D-016: Image-to-3D / rigging - provider slot DORMANT) -->
+        <!-- 3D Studio tab (D-017: photo -> rigged 3D character, then movies) -->
         <div id="media-3d" class="nfa-tabpane" style="display:none;">
             <div class="nfa-surface">
                 <h3 class="nfa-title">3D Studio</h3>
                 <p class="nfa-muted" style="margin-bottom: var(--md-sys-spacing-md, 16px);">
-                    Turn photos or video into a 3D character you can use in games and cartoons.
-                    Just add your pictures - no settings needed.</p>
+                    Turn a photo into a 3D character you can put in movies. Just add one clear
+                    photo - we do the rest, and we check the result ourselves.</p>
                 <div class="easy-grid">
-                    <div class="easy-tile">
+                    <div class="easy-tile" id="threed-tile">
                         <h4>Make My 3D Character</h4>
-                        <p>Add a few photos or a short video of the person or pet. We build a 3D model
-                           with a movable skeleton (rigging) you can pose in games and movies.</p>
-                        <span class="nfa-badge warn">Coming - one step needs the owner</span>
+                        <p>Add one clear photo of the person or pet, give them a name, and press
+                           the button. We build a movable 3D character and check it matches the photo.</p>
+                        <label class="nfa-label">Character name</label>
+                        <input type="text" id="threed-name" class="nfa-input" style="width:100%;" placeholder="e.g. Maya">
+                        <label class="nfa-label">Photo</label>
+                        <button class="nfa-btn nfa-btn-secondary" onclick="document.getElementById('threed-file').click()">Choose photo&hellip;</button>
+                        <input type="file" id="threed-file" accept="image/jpeg,image/png,image/webp" style="display:none;">
+                        <span class="nfa-muted" id="threed-note"></span>
+                        <span class="easy-energy" id="threed-energy">⚡ about $0.70</span>
+                        <button class="nfa-btn nfa-btn-primary easy-go" onclick="threedRun()">Make My 3D Character</button>
                     </div>
                     <div class="easy-tile">
-                        <h4>Why is it not ready yet?</h4>
-                        <p>The 3D building service needs its own account key, which only the owner
-                           (the family computer administrator) can turn on. Everything else keeps working,
-                           and your photos stay on this computer meanwhile.</p>
-                        <span class="easy-energy">Owner sees: enable a 3D provider key to activate</span>
+                        <h4>After it's done</h4>
+                        <p>Your character appears in <b>Characters</b> with a movie-style picture.
+                           Press <b>Make My Photo Move</b> on the Easy tab (or Animate on their card)
+                           to put them in a video - type what they should do.</p>
+                        <span class="easy-energy">Tip: photos of real people stay private on this computer</span>
                     </div>
                 </div>
-                <p class="nfa-muted" style="margin-top: var(--md-sys-spacing-md, 16px);">
-                    When enabled, photos of real people will ask a grown-up first (Parent Gate) -
-                    that's how we keep everyone safe.</p>
             </div>
         </div>
 
@@ -1836,6 +1840,43 @@
             body.dataset.uploadUrl = ((data.upload || {}).url) || '';
             note.textContent = 'Photo added \u2713';
         } catch (e) { note.textContent = 'Upload failed - try again'; }
+    }
+
+    async function threedUpload(ev) {
+        const f = ev.target.files && ev.target.files[0];
+        if (!f) return;
+        const note = document.getElementById('threed-note');
+        note.textContent = 'Sending your photo\u2026';
+        try {
+            const buf = await f.arrayBuffer();
+            const res = await fetch('/api/media/uploads?filename=' + encodeURIComponent(f.name),
+                                    { method: 'POST', body: buf });
+            const data = await res.json();
+            if (data.status === 'error') { note.textContent = 'Upload failed: ' + data.error; return ''; }
+            note.textContent = 'Photo added \u2713';
+            return ((data.upload || {}).url) || '';
+        } catch (e) { note.textContent = 'Upload failed - try again'; return ''; }
+    }
+    let THREED_URL = '';
+    document.addEventListener('change', async (ev) => {
+        if (ev.target && ev.target.id === 'threed-file') THREED_URL = await threedUpload(ev);
+    });
+
+    async function threedRun() {
+        const name = (document.getElementById('threed-name') || {}).value || '';
+        if (!THREED_URL) return alert('Add your photo first');
+        if (!name.trim()) return alert('Give your character a name first');
+        const btn = event.target;
+        btn.disabled = true; btn.textContent = 'Building your character\u2026 (a few minutes)';
+        try {
+            const result = await toolsPost('/api/media/jobs',
+                { kind: 'to3d', prompt: '3D character from photo',
+                  params: { name: name.trim(), source_url: THREED_URL }, provider: 'fal' });
+            if (result.status === 'error') { alert(result.error); btn.textContent = 'Make My 3D Character'; return; }
+            btn.textContent = 'Done \u2713 - see it in Characters';
+            loadCharacters(); mediaTab('characters');
+        } catch (e) { alert('Could not start - try again'); }
+        finally { btn.disabled = false; }
     }
 
     async function easyRun(p, btn) {
