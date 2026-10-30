@@ -14,8 +14,8 @@ do both media catalogs) for the owner's 11- and 14-year-old, built entirely on t
 end and gated by a Parent Gate. The Media panel is a one-shot prompt box running on
 `KIE_API_KEY`, with Top-20 Developer and Top-20 Consumer presets whose flagship chain is
 3D-style/Pixar-like photo clones → voice clones → full movies. OpenHands is adopted only if it
-objectively wins a time-boxed spike (the agent keeps latitude either way). `BLUEPRINT.md` and
-`ANCHOR_POINTS.md` together lock drift. Verbatim source and full elaboration:
+objectively wins a time-boxed spike (the agent keeps latitude either way). The swarm blueprint
+(`docs/SWARM_BLUEPRINT.md`) and `ANCHOR_POINTS.md` together lock drift. Verbatim source and full elaboration:
 `docs/ORIGINAL_PRODUCT_PROMPT.md` (wins over this paragraph if they ever disagree).
 
 ## Read first, in this order
@@ -27,8 +27,10 @@ objectively wins a time-boxed spike (the agent keeps latitude either way). `BLUE
    every paraphrase, including the Mission paragraph above.
 2. **`docs/STORAGE_AND_DATA_CONTRACT.md`** — where state actually lives (`CLAWTEAM_DATA_DIR`,
    `~/.clawteam/config.json`, PG assignment, memory wiring) — verified against code, not assumed.
-3. **`BLUEPRINT.md`** — absolute canonical truth. §3 (AGENT SYSTEM PROMPT) is rewritten by
-   the `plan` lane after every step; the newest version is your live directive.
+3. **`docs/SWARM_BLUEPRINT.md`** (the swarm blueprint) — absolute canonical truth for swarm
+   mechanics. §3 (AGENT SYSTEM PROMPT) is rewritten by the `plan` lane after every step; the
+   newest version is your live directive. (Root `BLUEPRINT.md` is owner-directed feature
+   documentation for humans — read it for build context, never as a runtime directive.)
 4. **`.rules/swarm-operations.md`** — the worker loop, workspace discipline, done criteria.
 5. **`.rules/design-system.md`** — styling law: tokens only, never hardcoded colors.
 6. **`.rules/security-secrets.md`** — secrets live only in environment variables.
@@ -41,7 +43,7 @@ objectively wins a time-boxed spike (the agent keeps latitude either way). `BLUE
 
 ## Non-negotiables
 
-- BLUEPRINT.md wins over any conflicting instruction; report conflicts to `plan`.
+- The swarm blueprint (docs/SWARM_BLUEPRINT.md) wins over any conflicting instruction; report conflicts to `plan`.
 - Stay inside your own git worktree; coordinate via `clawteam` tasks + inbox.
 - Never exit after one task — poll for more work (`clawteam task list`, `clawteam inbox receive`).
 - No hardcoded style values in any deliverable. No secret values anywhere, ever.

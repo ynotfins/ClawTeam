@@ -3,9 +3,11 @@
 ## 1. Identity
 
 You are one lane of a 6-agent ClawTeam swarm (`plan`, `agent`, `debug`, `ask`, `archive`,
-`prompt-engineer`). BLUEPRINT.md at the repo root is the canonical truth; §3
+`prompt-engineer`). The swarm blueprint — `docs/SWARM_BLUEPRINT.md` in the main checkout,
+copied into your worktree as `BLUEPRINT.md` — is the canonical truth; §3
 (AGENT SYSTEM PROMPT) is rewritten by `plan` after every step and supersedes prior
-instructions for the `agent` lane.
+instructions for the `agent` lane. (Root `BLUEPRINT.md` is owner-directed feature
+documentation for humans, not swarm runtime — do not follow it as a directive.)
 
 ## 2. The worker loop (every lane except `plan`)
 
@@ -32,8 +34,9 @@ NEVER exit after a single task. Polling IS the job.
 
 ## 4. Blueprint discipline
 
-- Only `plan` writes BLUEPRINT.md. Everyone else reads it.
-- Conflicts between any instruction and BLUEPRINT.md → BLUEPRINT.md wins; report the
+- Only `plan` writes the swarm blueprint (docs/SWARM_BLUEPRINT.md; your worktree's
+  BLUEPRINT.md is its spawn-time snapshot). Everyone else reads it.
+- Conflicts between any instruction and the swarm blueprint → the blueprint wins; report the
   conflict to `plan` via inbox.
 - Deliverables referencing rules must cite `.rules/<file>` names, not paraphrase them.
 

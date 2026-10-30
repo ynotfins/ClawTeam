@@ -13,7 +13,7 @@ existing board — visible, auditable. 4. Nothing reaches `ship/<run>/integratio
 
 | Role (agent name) | Type | Count | Worktree | Charter |
 |---|---|---|---|---|
-| `plan` | leader/planner | 1 | main-adjacent (read/write BLUEPRINT only) | Turns the prompt into a PRD-lite + task DAG; rewrites BLUEPRINT §1/§3 each step; owns phase transitions; merges via Integrator |
+| `plan` | leader/planner | 1 | main-adjacent (read/write swarm blueprint only) | Turns the prompt into a PRD-lite + task DAG; rewrites the swarm blueprint (docs/SWARM_BLUEPRINT.md) §1/§3 each step; owns phase transitions; merges via Integrator |
 | `architect` | planner | 1 | lane | Stack/architecture decisions using the Benchmark Rule; writes ADRs; decides fork points |
 | `agent` | executor | 1 | lane | Primary implementation lane (kept for compatibility with BLUEPRINT §3) |
 | `be-dev` | executor | 1–2 | lane | Back-end / data / API |

@@ -6,7 +6,7 @@ agent (any CLI) in this swarm. `ANCHOR_POINTS.md` (immutable foundations) is the
 
 Quick reference:
 
-- `BLUEPRINT.md` = canonical truth; §3 is your live system prompt (rewritten by `plan` every step).
+- `docs/SWARM_BLUEPRINT.md` = swarm canonical truth; §3 is your live system prompt (rewritten by `plan` every step; your worktree's `BLUEPRINT.md` is its spawn-time snapshot). Root `BLUEPRINT.md` = fork feature documentation (humans, not runtime).
 - Worker loop + done criteria: `.rules/swarm-operations.md`
 - Styling (tokens only): `.rules/design-system.md`
 - Secrets (env vars only): `.rules/security-secrets.md`

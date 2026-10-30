@@ -33,9 +33,9 @@ no Docker, invisible background execution. This document is the operator's manua
 | `archive` | Distills outcomes; owns team memory (all-local: AgentCore facade + local files — `.rules/memory-local.md`) |
 | `prompt-engineer` | Audits and proposes improved §3 rewrites to `plan` |
 
-`BLUEPRINT.md` is the absolute canonical truth for every sub-agent workspace. Each
+The swarm blueprint (`docs/SWARM_BLUEPRINT.md`) is the absolute canonical truth for every sub-agent workspace. Each
 spawned agent's git worktree receives a spawn-time copy of the canonical files
-(BLUEPRINT, `.rules/`, `design/`, rule surfaces, `.mcp.json`) via the
+(swarm blueprint as `BLUEPRINT.md`, `.rules/`, `design/`, rule surfaces, `.mcp.json`) via the
 `AfterWorkerSpawn → scripts\hooks\sync_blueprint.py` hook, plus a
 `.clawteam-workspace.json` pointer to the live canonical copy (only `plan` writes it).
 
@@ -313,7 +313,7 @@ component level anywhere — board UI included (converted to CSS variables +
 | Canonical pack | `.rules\design-system.md`, `security-secrets.md`, `memory-openmemory.md`, `swarm-operations.md` |
 | Agent entry | `AGENTS.md`, `CLAUDE.md` (point at BLUEPRINT + `.rules`) |
 | Cursor | `.cursorrules` + `.cursor\rules\*.mdc` (4 rules, alwaysApply) |
-| Canonical truth | `BLUEPRINT.md` |
+| Canonical truth | `docs/SWARM_BLUEPRINT.md` (copied into each worktree as `BLUEPRINT.md`) |
 
 ## 9. Framework fixes applied in this workspace (vs upstream HEAD `0119833`)
 

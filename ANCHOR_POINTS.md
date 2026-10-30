@@ -10,8 +10,8 @@
 > that respects it and (2) log an `ANCHOR-CHALLENGE` entry in `docs/DECISION_LOG.md`.
 > It does **not** unilaterally deviate.
 >
-> **Precedence**: owner's live instruction > this file > `BLUEPRINT.md` §3 > everything else.
-> (`BLUEPRINT.md` stays canonical for swarm mechanics. On conflict, follow this file and log
+> **Precedence**: owner's live instruction > this file > the swarm blueprint (`docs/SWARM_BLUEPRINT.md`) §3 > everything else.
+> (The swarm blueprint stays canonical for swarm mechanics. On conflict, follow this file and log
 > an `ANCHOR-CHALLENGE`.)
 >
 > **Tags**: `[V]` verified by reading the repo during this documentation pass ·
@@ -91,7 +91,7 @@
 | ID | Anchor |
 |---|---|
 | F1 | Lanes `plan · agent · debug · ask · archive · prompt-engineer` remain valid. New roles/teams are **additive**; `agentic-se` keeps working. `[V]` |
-| F2 | `BLUEPRINT.md` stays canonical for swarm mechanics; only `plan` rewrites it; §3 is the live agent prompt. `[V]` |
+| F2 | The swarm blueprint — **`docs/SWARM_BLUEPRINT.md`** (D-019; worktree copies are named `BLUEPRINT.md`) — stays canonical for swarm mechanics; only `plan` rewrites it; §3 is the live agent prompt. Root `BLUEPRINT.md` is owner-directed feature documentation, not swarm runtime. `[V]` |
 | F3 | Worker loops poll tasks + inbox, report `STEP DONE`, and checkpoint their worktree. A *mission* ends when the Shipped criteria are met (`docs/SWARM_TEAM_SPEC.md` §9); workers then idle, not spin. `[V]` + `[O]` |
 | F4 | "Done" requires **evidence** (test output or artifact path). `[V]` |
 | F5 | **No questions.** Swarm agents never ask the human anything except an **Absolute Blocker** (`docs/AUTONOMY_POLICY.md` §3). All other decisions follow the **Top-Apps Benchmark Rule**. `[O]` |

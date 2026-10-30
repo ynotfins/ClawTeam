@@ -26,6 +26,12 @@ CANONICAL_FILES = [
     ".cursorrules",
     ".mcp.json",
 ]
+# D-019: the swarm blueprint lives at docs/SWARM_BLUEPRINT.md in the main checkout;
+# the worktree copy keeps the name BLUEPRINT.md so in-worktree prompt text stays
+# literally true.
+CANONICAL_FILE_SOURCES = {
+    "BLUEPRINT.md": os.path.join("docs", "SWARM_BLUEPRINT.md"),
+}
 CANONICAL_DIRS = [
     ".rules",
     "design",
@@ -98,7 +104,7 @@ def main() -> int:
 
     copied: list[str] = []
     for name in CANONICAL_FILES:
-        s = src / name
+        s = src / CANONICAL_FILE_SOURCES.get(name, name)
         if s.is_file():
             try:
                 shutil.copy2(s, dst / name)
@@ -119,7 +125,7 @@ def main() -> int:
             json.dumps(
                 {
                     "repo_root": str(src),
-                    "blueprint_canonical": str(src / "BLUEPRINT.md"),
+                    "blueprint_canonical": str(src / "docs" / "SWARM_BLUEPRINT.md"),
                     "note": "BLUEPRINT.md here is a spawn-time snapshot; the canonical "
                     "live copy is blueprint_canonical (maintained by the plan lane).",
                     "team": team,

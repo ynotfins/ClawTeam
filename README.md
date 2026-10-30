@@ -1,872 +1,231 @@
-<h1 align="center"><img src="assets/icon.png" alt="" width="64" style="vertical-align: middle;">&nbsp; ClawTeam: Agent Swarm Intelligence</h1>
+# ClawTeam — Control-Plane Deployment: Every Feature We Added
 
-<p align="center">
-  <strong>The Evolution of AI Agents 🚀: Solo 🤖 → Swarm 🦞🤖🤖🤖<br>
-  ClawTeam: Let AI Agents Form Swarms, Think & Work Together, and Ship Faster</strong>
-</p>
+This is the **production deployment fork** of [HKUDS ClawTeam](https://github.com/HKUDS) (upstream
+framework: config management, multi-user workflows, P2P transport, team templates — unchanged and
+credited). On top of that base, this fork is a **Windows-native, fully autonomous software-building
+runtime** with a local web control-plane (**the Board**) and a **Multimedia Studio**, serving two
+audiences at once: **Pro** (commercial developers) and **Keep It Simple** (kids and non-technical
+family), with neither degrading the other.
 
-<p align="center">
-  <a href="#-quick-start"><img src="https://img.shields.io/badge/Quick_Start-3_min-blue?style=for-the-badge" alt="Quick Start"></a>
-  <a href="#-use-cases"><img src="https://img.shields.io/badge/Use_Cases-3_Demos-green?style=for-the-badge" alt="Use Cases"></a>
-  <a href="#-features"><img src="https://img.shields.io/badge/Features-12+-purple?style=for-the-badge" alt="Features"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge" alt="License"></a>
-</p>
+* The upstream ClawTeam product README is preserved in git history: `git show HEAD:README.md`.
+* The swarm's canonical team-truth file now lives at `docs/SWARM_BLUEPRINT.md` (decision D-019).
+* Companion documents: **[BLUEPRINT.md](BLUEPRINT.md)** (how every feature is built, wired, and
+  tested) · **[CONTEXTBLOCK.md](CONTEXTBLOCK.md)** (what every feature does and outputs at its best).
 
-<p align="center">
-  <img src="https://img.shields.io/badge/python-≥3.10-blue?logo=python&logoColor=white" alt="Python">
-  <img src="https://img.shields.io/badge/typer-CLI-green" alt="Typer">
-  <img src="https://img.shields.io/badge/agents-Claude_Code_%7C_Codex_%7C_Any_CLI-blueviolet" alt="Agents">
-  <img src="https://img.shields.io/badge/transport-File_%7C_ZeroMQ_P2P-orange" alt="Transport">
-  <a href="https://github.com/HKUDS/.github/blob/main/profile/README.md"><img src="https://img.shields.io/badge/Feishu-Group-E9DBFC?style=flat&logo=feishu&logoColor=white" alt="Feishu"></a>
-  <a href="https://github.com/HKUDS/.github/blob/main/profile/README.md"><img src="https://img.shields.io/badge/WeChat-Group-C5EAB4?style=flat&logo=wechat&logoColor=white" alt="WeChat"></a>
-</p>
+**Open the app**: `scripts/windows/Start-Board.ps1` → Board at `http://127.0.0.1:8788`
+(loopback-only; the desktop shortcut does the same). **Ship software**: `clawteam ship "<prompt>"
+--mode pro|simple` — one prompt in, a spawned autonomous team out.
 
-> ---
->
-> ## 🖥️ This fork: the deployed Control-Plane product
->
-> This branch carries a production deployment of ClawTeam as a **Windows-native
-> developer control-plane** — a multi-agent autonomous runtime plus a
-> Multimedia Studio (image/video generation, reusable characters) on the
-> R3lentless-Grind Design System, with a local ComfyUI GPU tier and KIE.ai
-> cloud providers behind an app-owned boundary.
->
-> **Deployment docs**: [Handoff](docs/HANDOFF.md) · [Architecture](docs/ARCHITECTURE.md) ·
-> [Operator manual (BOOTSTRAP)](BOOTSTRAP.md) · [Operations](docs/OPERATIONS.md) ·
-> [Media Studio guide](docs/MEDIA_STUDIO.md) · [Changelog](CHANGELOG.md)
->
-> ---
-
-**One Command Line: Full Automation.** — agents spawn swarms, delegate tasks, and deliver results. 
-
-Human provides the goal. The Agent Team orchestrates everything else.
-
-Full compatibility with [Claude Code](https://claude.ai/claude-code), [Codex](https://openai.com/codex), [OpenClaw](https://github.com/openclaw/openclaw), [nanobot](https://github.com/HKUDS/nanobot), [Cursor](https://cursor.com), and any CLI agent.&nbsp;&nbsp;[**中文文档**](README_CN.md) | [**한국어**](README_KR.md)
+Test baseline: **685 collected (2026-10-27 audit), ~744 test functions at HEAD** — run with
+`pytest --basetemp=.clawteam-local/pytest-tmp`.
 
 ---
 
-## 📰 News
+## The features we added
 
-**2026-03-18** ClawTeam project launched publicly.
+### 1. Board — the web control plane
 
-**2026-03-23** ClawTeam `v0.2.0` is released today.
+A stdlib-only Python server (`clawteam/board/`, `ThreadingHTTPServer`, no build tooling required)
+serving a single-page app on `127.0.0.1:8788` with five views — **Board** (live kanban of every
+team's tasks, streaming per-team updates over SSE with a shared TTL snapshot cache), **Tools**
+(MCP servers + skills manager), **Models** (OpenRouter explorer), **Media** (the studio),
+**Extract** (local OCR). The team selector can create a full `fullstack-commercial` team shell
+from the Board itself (`POST /api/team/create`). A GitHub-only egress proxy lets the UI fetch
+allow-listed upstream content while blocking loopback/private/metadata targets and redirects.
 
-**2026-03** The current baseline includes config management, multi-user workflows, Web UI, P2P transport, and team templates.
+### 2. RGDS frontend & the zero-hardcoding design law
+
+The entire UI runs on the vendored **R3lentless-Grind Design System 1.1.0**
+(`clawteam/board/static/rgds/`, sha-locked). `design/theme.tokens.json` defines exactly four theme
+modes (two light, two dark) served at `/api/theme`; **no color, gradient, shadow, radius, spacing,
+or font literal may be hardcoded anywhere** — only design tokens. This is enforced by tests that
+scan the UI for literals and fail the build if one appears (a real regression in board CSS was
+found and fixed this way: one unclosed rule had silently unstyled half the app).
+
+### 3. Tools & Models panels
+
+**Tools** manages MCP servers and skills across repo/worker/user scopes — adding an MCP server is
+validated (name pattern, https-or-loopback-only URLs) and written to both the repo and worker
+configs at once. **Models** shows the OpenRouter topology: live model rankings, an autorouter
+role table, model comparison, API-key health and spend, and a routing editor (`/api/openrouter/*`).
+Missing keys are a first-class **dormant** state — the UI shows "not configured," never crashes.
+
+### 4. Media pipeline core
+
+The app-owned job engine behind every image/video/3D generation (`clawteam/media/`): jobs move
+through fixed states (`draft → queued → running → provider_succeeded → downloading → succeeded`,
+plus explicit `failed` / `timed_out` / `succeeded_provider_download_failed`), stored as atomic
+per-job JSON with file locking. Every submission is **estimated first** (route + credits shown
+before you spend); submits happen **exactly once** (cloud throttle, 5 s spacing — no double
+charge); polling backs off exponentially; **outputs are downloaded into the local asset store
+before a job is called `succeeded`**; a failed download never silently loses the result. Retry is
+user-initiated and keeps completed pipeline stages; a board restart mid-job re-polls the in-flight
+provider task instead of resubmitting. The provider boundary (`MediaProvider` protocol) keeps
+every provider's payload format inside its own adapter.
+
+### 5. Local GPU tier (ComfyUI bridge)
+
+A ComfyUI provider (`clawteam/media/providers/comfyui_local.py`) that lazily boots ComfyUI
+(hidden window, loopback :8188) on first use, runs a seeded SDXL workflow (1024², ~16 s), and is
+the default (free) route for safe image kinds, falling back to cloud only if the GPU tier is down.
+
+### 6. KIE cloud provider & model adapters
+
+Cloud generation runs on the user's **kie.ai** key (`KIE_API_KEY`, name-only in configs): image
+kinds on **flux1-kontext** (5 credits, live-verified), video on **MiniMax H3** (per-second
+pricing, 4–15 s), upscaling on **Topaz** image/video models, plus a runway adapter. Each model
+family gets its own pinned payload adapter built from verified docs (never one universal
+schema). The provider records **actual** credits from each completed task (`creditsConsumed`)
+and corrects the estimate table from live results. A dormant key = clean "not configured" health,
+never a crash. Default swarm LLM routing (D-013) also runs through KIE for Claude-family chat,
+with GLM-5.3 kept on the separate `openrouter-llm` profile.
+
+### 7. Characters — reusable identity studio
+
+The Characters tab turns one photo into a reusable character (`clawteam/media/characters.py`):
+photo → **sculpt** (3D animated-film render) → **stylize** (big-studio character) as the canonical
+identity; then **new looks** (identity-consistent variants, prompt auto-wrapped to keep the same
+face/hair) and **5-second scenes** (animate from the canonical or any variant, playing inline as
+thumbnails on the character card). Every asset is registered to the character with per-stage cost
+summed from provider actuals (~10 credits to create, ~5 per look, ~12 per scene).
+
+### 8. Self-hosted photo lane
+
+Uploads for character work are **self-hosted** (no third-party host): the Characters tab uploads
+a photo (magic-byte sniffed, 10 MB cap, jpg/png/webp) to a token-named local store with a 24 h
+TTL (`clawteam/media/uploads.py`), served through the **only publicly reachable process** in the
+system — a dedicated loopback photo host (:18790) behind a cloudflared tunnel
+(`photos.miaknuckles.com`). Unknown tokens 404, expired tokens 410 (fail-closed), expired files
+are swept by the media worker. **Animate-from-variant** re-hosts an existing look through this
+lane server-side (provider URLs expire) so any variant can be animated fresh.
+
+### 9. Easy Studio — one-click tiles (WP6)
+
+Six plain-English tiles that hide the entire pipeline behind one click
+(`clawteam/media/presets.py`): *Make a Picture*, *Change My Photo*, *Make My Photo Sharper &
+Bigger* (Topaz image upscale), *Make a Video*, *Make My Video Sharper* (Topaz video upscale),
+*Make My Photo Move*. Each tile pins the best model for the job, shows the credit cost up front,
+validates its inputs, and is checked by a catalog validator (unique ids, verified models, kind
+consistency, mandatory example text) — a tile that drifts from a real provider capability fails
+the build, not the user.
+
+### 10. Buddy guide (D-018)
+
+Every family panel holds the user's hand: a **"What we need from you" checklist** with live ✓
+marks that keeps the Make-It button disabled until every needed input exists; **"What you gave
+us"** thumbnails of the exact photo/video uploaded; **"Here is what it can look like"** examples
+drawn from the real asset library; and a **live progress bar with % and plain-language status**
+("Sculpting your 3D character from the photo…", "Saving it to your library…") polled from the job
+state every 3 seconds until done. Copy is grade-school plain; failures speak kid ("The photo did
+not go through — let's try that again.").
+
+### 11. 3D Studio — photo to rigged character (WP7/D-017)
+
+A first-class Media tab that turns one photo into a **true 3D mesh asset** (Lane B — the UI never
+presents stylized imagery as 3D): **Fal.ai** `tripo3d/h3.1/image-to-3d` generates a rigged-ready
+GLB + preview, `fal-ai/meshy/rigging` adds a humanoid skeleton with a walking clip (rig failure
+is non-fatal — the unrigged model still ships), and a **forensic vision QA**
+(`google/gemini-2.5-pro` via OpenRouter) compares source photo vs preview and returns a strict
+JSON verdict; a failed verdict triggers **one automatic regeneration** on a fallback model
+(Hunyuan) before giving up. The rig preview becomes the character's canonical image, so the
+existing "Make My Photo Move" lane immediately puts the 3D character in a movie.
+
+### 12. Extract panel — local OCR/PDF
+
+A fifth Board view wiring the six **local** IureOCR MCP tools (`ocr_file`, `extract_text`,
+`pdf_info`, `render_page`, `edit_pdf_pages`, `ocr_languages`) through a stdio JSON-RPC bridge
+(`clawteam/board/ocr_tools.py`) and `/api/ocr/*` routes — OCR text extraction, page rendering,
+and PDF page editing (rotate/delete/keep/reorder) fully on-device: no network, no key, serialized
+so the CPU-bound Tesseract is never run concurrently.
+
+### 13. Stage layer (WP2)
+
+Per-run git staging that makes parallel swarm work safe (`clawteam/stage/`): every ship run gets
+`ship/<run>/integration` plus `lane/<role>`, `fork/<decision>/<option>`, and `ab/<experiment>`
+branches, each in its own worktree under a short root (`D:\w\<run8>`, override
+`CLAWTEAM_STAGE_ROOT`) with `core.longpaths` enabled. **Nothing reaches the integration branch
+except a `stage promote --approved-by judge`** (impostors are rejected and integration is left
+untouched); every promotion is audit-logged; discard and gc keep the tree clean. `clawteam ship`
+creates the run's integration stage automatically.
+
+### 14. Autonomy engine (WP4)
+
+The no-questions law, as code (`clawteam/autonomy/`): **`decide()`** turns every non-blocker
+decision into a `D-nnn` record (question, options, benchmark table, chosen, confidence,
+rationale) appended to `decisions.jsonl` and mirrored into `docs/DECISION_LOG.md`; **Blocker
+Cards** capture the only legitimate reason to interrupt the owner (impossible without
+owner-only action, no safe default, all self-recovery tried) as `B-nnn` cards with batched
+15-minute notifications — the swarm **never pauses**; the **Fork Controller** builds *both*
+materially-different options as real stage branches when the Top-Apps Benchmark can't pick a
+winner (max 3 open forks, 2 options each, ≤40 % of budget, no nesting), then records the winner
+and discards the loser.
+
+### 15. Critic loop, budget governors, stuck detection (WP3)
+
+**Critic loop**: continuous defect scanning triggered every 5 minutes or by lane commits;
+findings require evidence, dedupe by fingerprint within a 30-minute cooldown, and the Judge
+triages ≥medium to the debug lane (lower severities are kept, never deleted). **Budget
+governors**: every run has caps (wall-clock, tokens, credits, concurrency, open experiments;
+separate Pro and Simple defaults) — 80 % stops new forks, 100 % triggers graceful wrap-up,
+never a silent runaway. **Stuck detection**: tasks active but untouched for 20 minutes are
+reported with the right fix — in_progress → respawn, pending → reassign — for the leader
+watcher to execute.
+
+### 16. Keep It Simple mode & Parent Gate (WP5)
+
+A backend + Board routes for the kids' experience (`clawteam/kis/`, `~/.clawteam/kis.json`):
+turning KIS **on** is free; turning it **off** requires the **Parent Gate** — a scrypt-hashed
+PIN (never stored or logged in plaintext, 5 wrong attempts = 5-minute lockout). The same gate
+approves the sensitive actions: disabling KIS, changing caps, publishing externally, approving
+a person's photo or a voice clone, raising credit caps, deleting a project. Kid sessions run
+under default caps (40 credits/run, 150/day, 45 min/run, 2 concurrent jobs) and stay local-only
+by default. The policy snapshot served to the UI contains zero PIN material.
+
+### 17. One-shot ship & the fullstack-commercial team (WP1/D-014)
+
+`clawteam ship "<prompt>" --mode pro|simple` is the single entry point: it mints a run id,
+creates the run's stage integration branch, records `run.json`, and launches the
+**fullstack-commercial** team — a 19-role swarm (leader `plan`, architect, front/back-end devs,
+QA, debug, security, devops, three critics, two A/B explorers, a Judge, an integrator, archive,
+prompt-engineer) that works in parallel lanes under INTAKE → RESEARCH → PLAN → BUILD → HARDEN →
+SHIP → IDLE phases, proves every step with evidence, and only promotes through the Judge. The
+team is also creatable from the Board dropdown. The 6-lane `agentic-se` base template is
+untouched.
+
+### 18. Windows operations scripts
+
+`scripts/windows/` runs the whole deployment natively: **Start-Board.ps1** (hidden board on
+8788 + browser), **Start-PhotoTunnel.ps1** (idempotent cloudflared tunnel for the photo host),
+**Start-Swarm.ps1 / Stop-Swarm.ps1** (fully hidden swarm supervisor with graceful stop),
+**Open-Board-Desktop.ps1** (app-mode browser window with its own taskbar entry),
+**Invoke-Hidden.ps1** (no console-flash process helper).
+
+### 19. Commercialization contracts (WP9–11 — designed, not yet built)
+
+The locked plan for shipping (D-014): **WP9** all keys stay on the owner's PC; the shipped exe
+carries zero key material (provable by strings scan) and is a remote client of the local server
+through an authenticated tunnel; **WP10** Stripe **$1/month** subscription gating
+(checkout + webhook license states, paywall when unlicensed); **WP11** Windows exe packaging
+(PyInstaller onedir, clean-profile run, build hash in the ship report). Contract-only today —
+no code exists yet; the contracts live in `docs/BUILD_PLAN.md` §3b and anchors A8/A9/B7a/D7/D8.
 
 ---
 
-## ✨ ClawTeam's Key Features
-
-<table align="center" width="100%">
-<tr>
-<td width="25%" align="center" style="vertical-align: top; padding: 15px;">
-
-<h3>🔬 AI Research Automation</h3>
-
-<div align="center">
-  <img src="https://img.shields.io/badge/AutoResearch-FF6B6B?style=for-the-badge&logo=pytorch&logoColor=white" alt="AutoResearch" />
-</div>
-
-<img src="assets/scene-autoresearch.png" width="180">
-
-<p align="center"><strong>• Large-Scale Automated ML Experimentation</strong></p>
-
-<p align="center"><strong>• AI Model Training & Optimization</strong></p>
-
-<p align="center"><strong>• AI-Driven Hypothesis Generation & Validation</strong></p>
-
-<p align="center"><strong>• Self-Improving Model Architectures</strong></p>
-
-</td>
-<td width="25%" align="center" style="vertical-align: top; padding: 15px;">
-
-<h3>🏗️ Agentic Engineering</h3>
-
-<div align="center">
-  <img src="https://img.shields.io/badge/Full--Stack_Dev-4ECDC4?style=for-the-badge&logo=git&logoColor=white" alt="Engineering" />
-</div>
-
-<img src="assets/scene-engineering.png" width="180">
-
-<p align="center"><strong>• Autonomous Full-Stack Development</strong></p>
-
-<p align="center"><strong>• Self-Evolving Software</strong></p>
-
-<p align="center"><strong>• Collaborative Open Source Development</strong></p>
-
-<p align="center"><strong>• Real-Time System Integration</strong></p>
-
-</td>
-<td width="25%" align="center" style="vertical-align: top; padding: 15px;">
-
-<h3>💰 AI Hedge Fund</h3>
-
-<div align="center">
-  <img src="https://img.shields.io/badge/Investment_Analysis-FFD93D?style=for-the-badge&logo=bitcoin&logoColor=black" alt="Hedge Fund" />
-</div>
-
-<img src="assets/scene-hedgefund.png" width="180">
-
-<p align="center"><strong>• Automated Market Research & Data Mining</strong></p>
-
-<p align="center"><strong>• Multi-Strategy Portfolio Optimization</strong></p>
-
-<p align="center"><strong>• Real-Time Risk Assessment</strong></p>
-
-<p align="center"><strong>• Algorithmic Trading Execution & Monitoring</strong></p>
-
-</td>
-<td width="25%" align="center" style="vertical-align: top; padding: 15px;">
-
-<h3>🎪 Your Own Swarm</h3>
-
-<div align="center">
-  <img src="https://img.shields.io/badge/TOML_Templates-C77DFF?style=for-the-badge&logo=toml&logoColor=white" alt="Templates" />
-</div>
-
-<img src="assets/scene-template.png" width="180">
-
-<p align="center"><strong>• Custom Scientific Research Teams</strong></p>
-
-<p align="center"><strong>• Personalized Investment Committees</strong></p>
-
-<p align="center"><strong>• Business Operations Teams</strong></p>
-
-<p align="center"><strong>• Content Production Studios</strong></p>
-
-</td>
-</tr>
-</table>
-
----
-
-<table align="center" width="100%">
-<tr>
-<td width="50%" align="center" style="vertical-align: top; padding: 10px;">
-
-<strong>v0.1.0</strong>
-
-https://github.com/user-attachments/assets/7e2f0ecd-8fe3-4970-90ac-5c9669ff060c
-
-</td>
-<td width="50%" align="center" style="vertical-align: top; padding: 10px;">
-
-<strong>v0.2.0</strong>
-
-https://github.com/user-attachments/assets/fd23be91-5cf4-457c-a77e-bac24b76e58f
-
-</td>
-</tr>
-</table>
-
-
-☝️ Intelligent leader agent orchestrates 8 specialized sub-agents across 8 H100 GPUs, autonomously designing experiments and dynamically reallocating resources based on real-time performance.
-
-🧠 The system synthesizes breakthroughs across teams and evolves strategies independently — achieving full research automation without human intervention.
-
-<p align="center">
-  <img src="assets/teaser.png" alt="ClawTeam - AI agents orchestrating themselves" width="800">
-</p>
-
----
-
-## 🤔 Why ClawTeam?
-
-Current AI agents are powerful — but they work in **isolation**. When facing complex tasks, you're stuck manually coordinating multiple agents, juggling context, and stitching together fragmented results.
-
-**What if agents could think and work as a team?**
-
-ClawTeam unlocks **Agent Swarm Intelligence** — where AI agents self-organize into collaborative teams, intelligently divide complex work, share insights in real-time, and converge on breakthrough solutions.
-
-• **🚀 Spawns specialized sub-agents** — each with dedicated environments and focus areas
-
-• **📋 Designs intelligent task allocation** — with smart dependency management
-
-• **💬 Facilitates real-time coordination** — seamless inter-agent communication
-
-• **📊 Monitors team performance** — tracks progress and identifies bottlenecks
-
-• **🔄 Adapts strategies dynamically** — reallocates resources and redirects efforts
-
-#### ✨ The Result?
-You set the vision. The swarm executes with collective intelligence.
-
-<p align="center">
-  <img src="assets/comic-how-it-works.png" alt="How ClawTeam works - comic" width="700">
-</p>
-
----
-
-## 🎯 Swarm Intelligence in Action
-
-<table>
-<tr>
-<td width="33%">
-
-### 🦞 Agents Spawn Agents
-The leader agent calls `clawteam spawn` to create workers. Each worker gets its own **git worktree**, **tmux window**, and **identity** — automatically.
-
-```bash
-# The leader agent runs:
-clawteam spawn --team my-team \
-  --agent-name worker1 \
-  --task "Implement auth module"
-```
-
-</td>
-<td width="33%">
-
-### 🤖 Agents Talk to Agents
-Workers check their inbox, update task status, and report results — all through CLI commands that are **auto-injected** into their prompt.
-
-```bash
-# A worker agent checks tasks:
-clawteam task list my-team --owner me
-# Then reports back:
-clawteam inbox send my-team leader \
-  "Auth done. All tests passing."
-```
-
-</td>
-<td width="33%">
-
-### 👀 You Just Watch
-Monitor the swarm from a tiled tmux view or a Web UI. The leader handles coordination — you intervene only when you want to.
-
-```bash
-# Watch all agents simultaneously
-clawteam board attach my-team
-# Or open the web dashboard
-clawteam board serve --port 8080
-```
-
-</td>
-</tr>
-</table>
-
-| | ClawTeam | Other multi-agent frameworks |
-|---|---------|----------------------------|
-| 🎯 **Who uses it** | **The AI agents themselves** | Humans writing orchestration code |
-| ⚡ **Setup** | `pip install` + one prompt to the leader | Docker, cloud APIs, YAML configs |
-| 🏗️ **Infrastructure** | Just a filesystem and tmux | Redis, message queues, databases |
-| 🤖 **Agent support** | Any CLI agent (Claude Code, Codex, OpenClaw, custom) | Framework-specific only |
-| 🌳 **Isolation** | Git worktrees (real branches, real diffs) | Containers or virtual envs |
-| 🧠 **Intelligence** | Swarm self-organizes via CLI commands | Hard-coded orchestration logic |
-
----
-
-## 🎬 Use Cases
-
-### 🔬 1. Autonomous ML Research — 8 Agents × 8 H100 GPUs
-
-Based on [@karpathy's autoresearch](https://github.com/karpathy/autoresearch).
-
-#### 💫 One Command. Full Automation.
-
-#### Human input: "Optimize this LLM training setup using 8 GPUs"
-
-The Agent Team handles everything else:
-- Spawns 8 specialized research agents across H100s
-- Designs 2000+ autonomous experiments
-- Achieves breakthrough improvements (val_bpb: 1.044→0.977)
-- Zero human intervention required
-
-#### 🎯 Pure Research at Scale
-
-Transform months of manual hyperparameter tuning into hours of intelligent automation.
-
-<p align="center">
-  <img src="assets/autoresearch-progress.png" alt="AutoResearch Progress" width="720">
-  <br>
-  <em>🏆 val_bpb: 1.044 → 0.977 (6.4% improvement) | 2430+ experiments | ~30 GPU-hours</em>
-</p>
-
-**What agent team did autonomously:**
-
-```
-Human prompt: "Use 8 GPUs to optimize train.py. Read program.md for instructions."
-
-🦞 Leader agent's actions:
-├── 📖 Read program.md, understand the experiment protocol
-├── 🏗️ clawteam team spawn-team autoresearch
-├── 🚀 Assigned each GPU a research direction:
-│   ├── GPU 0: clawteam spawn --task "Explore model depth (DEPTH 10-16)"
-│   ├── GPU 1: clawteam spawn --task "Explore model width (ASPECT_RATIO 80-128)"
-│   ├── GPU 2: clawteam spawn --task "Tune learning rates and optimizer"
-│   ├── GPU 3: clawteam spawn --task "Explore batch size and accumulation"
-│   ├── GPU 4-7: clawteam spawn tmux codex --task "..."  (Codex agents)
-│   └── 🌳 Each agent: own git worktree, own branch, isolated experiments
-├── 🔄 Every 30 minutes, checked results:
-│   ├── clawteam board show autoresearch
-│   ├── Read each agent's results.tsv
-│   ├── 🏆 Identified best findings (depth=12, batch=2^17, norm-before-RoPE)
-│   └── 📡 Cross-pollinated: told new agents to start from the best config
-├── 🔧 When agents finished, reassigned GPUs:
-│   ├── Killed idle agents, cleaned worktrees
-│   ├── Created new worktrees from the best commit
-│   └── Spawned fresh agents with combined optimization directions
-└── ✅ After 2430+ experiments: val_bpb 1.044 → 0.977
-```
-
-Full results: [novix-science/autoresearch](https://github.com/novix-science/autoresearch)
-
----
-
-### 🏗️ 2. Agentic Software Engineering
-
-You tell Claude Code: *"Build me a full-stack todo app."* Claude realizes this is a multi-module task and **self-organizes a team**:
-
-```
-Human prompt: "Build a full-stack todo app with auth, database, and React frontend."
-
-🦞 Leader agent's actions:
-├── 🏗️ clawteam team spawn-team webapp -d "Full-stack todo app"
-├── 📋 Created tasks with dependency chains:
-│   ├── T1: "Design REST API schema"          → architect
-│   ├── T2: "Implement JWT auth" --blocked-by T1  → backend1
-│   ├── T3: "Build database layer" --blocked-by T1 → backend2
-│   ├── T4: "Build React frontend"             → frontend
-│   └── T5: "Integration tests" --blocked-by T2,T3,T4 → tester
-├── 🚀 Spawned 5 sub-agents (each in its own git worktree):
-│   ├── clawteam spawn --agent-name architect --task "Design the API schema"
-│   ├── clawteam spawn --agent-name backend1  --task "Implement JWT auth"
-│   ├── clawteam spawn --agent-name backend2  --task "Build PostgreSQL models"
-│   ├── clawteam spawn --agent-name frontend  --task "Build React UI"
-│   └── clawteam spawn --agent-name tester    --task "Write pytest tests"
-├── 🔗 Dependency auto-resolution:
-│   ├── architect completes → backend1 and backend2 auto-unblock
-│   ├── All backends complete → tester auto-unblocks
-│   └── Each agent calls: clawteam task update <id> --status completed
-├── 💬 Sub-agents coordinate via inbox:
-│   ├── architect → backend1: "Here's the OpenAPI spec: ..."
-│   ├── backend1 → tester: "Auth endpoints ready at /api/auth/*"
-│   └── tester → leader: "All 47 tests passing ✅"
-└── 🌳 Leader merges all worktrees into main branch
-```
-
----
-
-### 💰 3. AI Hedge Fund — One-Command Team Launch
-
-A pre-built TOML template spawns a complete **7-agent** investment analysis team:
-
-```bash
-# One command launches everything:
-clawteam launch hedge-fund --team fund1 --goal "Analyze AAPL, MSFT, NVDA for Q2 2026"
-```
-
-```
-🦞 What happens automatically:
-├── 📊 Portfolio Manager (leader) spawns and receives the goal
-├── 🤖 5 Analyst agents spawn, each with a different strategy:
-│   ├── 🎩 Buffett Analyst    → value investing (moat, ROE, DCF)
-│   ├── 🚀 Growth Analyst     → disruption (TAM, network effects)
-│   ├── 📈 Technical Analyst  → indicators (EMA, RSI, Bollinger)
-│   ├── 📋 Fundamentals       → financial ratios (P/E, D/E, FCF)
-│   └── 📰 Sentiment Analyst  → news + insider trading signals
-├── 🛡️ Risk Manager spawns, waits for all analyst signals:
-│   ├── clawteam inbox receive fund1 (collects all 5 signals)
-│   ├── Consolidates + computes position limits
-│   └── clawteam inbox send fund1 portfolio-manager "RISK REPORT: ..."
-└── 💼 Portfolio Manager makes final buy/sell/hold decisions
-```
-
-Templates are TOML files — **create your own team archetypes** for any domain.
-
----
-
-## 📦 Install
-
-```bash
-pip install clawteam
-
-# Or install into an isolated user venv at ~/.clawteam/.venv
-scripts/install_clawteam.sh
-
-# Or from source
-git clone https://github.com/HKUDS/ClawTeam.git
-cd ClawTeam
-pip install -e .
-
-# Or install this checkout into ~/.clawteam/.venv
-scripts/clawteam_local_install
-
-# Optional: P2P transport (ZeroMQ)
-pip install -e ".[p2p]"
-```
-
-Requires **Python 3.10+**, **tmux**, and a CLI coding agent (e.g. `claude`, `codex`). The install scripts create/reuse `~/.clawteam/.venv`, link `~/.local/bin/clawteam`, and install/update the bundled `clawteam` skill for detected clients.
-
-Skill install targets are detected from existing config directories, including Claude Code, Codex, Gemini CLI, OpenClaw, OpenCode, Nanobot, Cursor, OpenHarness (`~/.openharness/skills`), and Ohmo (`~/.ohmo/skills`).
-
-All `spawn` examples assume the agent CLI you name is already installed and available on `PATH`.
-
----
-
-## 🚀 Quick Start
-
-If you're new to ClawTeam, follow this order:
-
-1. Make sure `tmux` and your agent CLI run standalone on this machine.
-2. Pick one path below: let an agent drive, or drive it manually.
-3. Use the supported-agent table to choose the right `spawn` command.
-4. If you're integrating a new agent, check the adapter notes before debugging.
-
-### ✅ Before You Start
-
-Run these checks first:
-
-```bash
-tmux -V
-clawteam --help
-
-# Replace claude with the agent you actually want to use:
-claude --version
-codex --version
-nanobot --help
-```
-
-If the agent CLI does not run correctly by itself, `clawteam spawn` will not fix it.
-
-### ⚡ Option 1: Let the Agent Drive (Recommended)
-
-ClawTeam ships with a reusable skill in `skills/clawteam/`.
-
-**Claude Code**
-
-Install the skill into `~/.claude/skills/clawteam`, then prompt:
-
-```
-"Build a web app. Use clawteam to split the work across multiple agents."
-```
-
-**Codex**
-
-Install the same skill into `$CODEX_HOME/skills/clawteam` (typically `~/.codex/skills/clawteam`), then prompt:
-
-```
-Use $clawteam to split this task across multiple agents and coordinate the team to completion.
-```
-
-The agent will automatically create a team, spawn workers, assign tasks, and coordinate — using `clawteam` CLI commands under the hood.
-
-### 🔧 Option 2: Drive It Manually
-
-```bash
-# 1. Create a team (you become the leader)
-clawteam team spawn-team my-team -d "Build the auth module" -n leader
-
-# 2. Spawn worker agents — each gets a git worktree, tmux window, and identity
-clawteam spawn --team my-team --agent-name alice --task "Implement the OAuth2 flow"
-clawteam spawn --team my-team --agent-name bob   --task "Write unit tests for auth"
-
-# 3. Workers auto-receive a coordination prompt that teaches them to:
-#    ✅ Check tasks:    clawteam task list my-team --owner alice
-#    ✅ Update status:  clawteam task update my-team <id> --status completed
-#    ✅ Message leader: clawteam inbox send my-team leader "Done!"
-#    ✅ Report idle:    clawteam lifecycle idle my-team
-
-# 4. Watch them work side-by-side
-clawteam board attach my-team
-```
-
-### 🧩 Profiles and Presets
-
-When you want to use a non-default provider, model, or API gateway, configure a
-**profile** first instead of manually exporting provider env vars each time.
-
-```bash
-# See built-in provider templates
-clawteam preset list
-clawteam preset show moonshot-cn
-
-# Generate a reusable runtime profile from a preset
-clawteam preset generate-profile moonshot-cn claude --name claude-kimi
-
-# MiniMax (M2.7) — global or China endpoint
-clawteam preset generate-profile minimax-global claude --name claude-minimax
-clawteam preset generate-profile minimax-cn claude --name claude-minimax-cn
-
-# Or use the interactive TUI
-clawteam profile wizard
-
-# Claude Code on a fresh machine/home may need this once
-clawteam profile doctor claude
-
-# Smoke-test the profile before spawning workers
-MOONSHOT_API_KEY=... clawteam profile test claude-kimi
-MINIMAX_API_KEY=... clawteam profile test claude-minimax
-```
-
-Rules of thumb:
-
-- `profile` is the final runtime object used by `spawn` / `launch`
-- `preset` is a reusable provider template that generates one or more profiles
-- `wizard` is the easiest path for first-time setup
-- `doctor` is mainly for Claude Code first-run onboarding state
-
-### 🧭 Which Spawn Command Should I Use?
-
-Use `clawteam spawn [backend] [command] ...` with the command that already works on
-your machine:
-
-```bash
-# Claude Code
-clawteam spawn tmux claude --team my-team --agent-name alice --task "Implement OAuth2"
-
-# Codex
-clawteam spawn tmux codex --team my-team --agent-name bob --task "Write frontend tests"
-
-# nanobot
-clawteam spawn tmux nanobot --team my-team --agent-name carol --task "Build the API"
-
-# A configured profile (recommended for non-default providers/models)
-clawteam spawn tmux --profile claude-kimi --team my-team --agent-name dave --task "Refactor the auth flow"
-```
-
-Notes:
-
-- `tmux` is the default backend and is the best choice when you want to watch interactive agent UIs.
-- `subprocess` is better for one-shot tools or non-interactive scripts.
-- `nanobot` is normalized internally to `nanobot agent`, so the command above is the correct ClawTeam entrypoint.
-- Claude Code and Codex trust prompts in fresh worktrees are auto-confirmed by the tmux backend.
-- For non-default providers/models, prefer `--profile <name>` over manually exporting env vars inline.
-
-### 🔌 Adding a Different Agent
-
-ClawTeam can work with agents beyond Claude Code, Codex, and nanobot, but the CLI
-must satisfy a small compatibility contract:
-
-1. The command must exist on `PATH` and launch successfully outside ClawTeam.
-2. The agent must be able to run inside a specific working directory or git worktree.
-3. The agent must accept an initial task, either by command-line argument or interactive input.
-4. The process must stay alive in `tmux` if it is meant to be interactive.
-
-If you're unsure, test the agent standalone first, then wrap it with:
-
-```bash
-clawteam spawn subprocess <your-agent> --team my-team --agent-name test --task "Say OK"
-```
-
-If that works, switch to `tmux` for interactive monitoring.
-
-### 🤖 Supported Agents
-
-ClawTeam works with **any CLI agent** that can execute shell commands:
-
-All examples below assume the corresponding CLI already runs standalone on your machine.
-
-| Agent | Spawn Command | Status |
-|-------|--------------|--------|
-| [Claude Code](https://claude.ai/claude-code) | `clawteam spawn tmux claude --team ...` | ✅ Full support |
-| [Codex](https://openai.com/codex) | `clawteam spawn tmux codex --team ...` | ✅ Full support |
-| [OpenClaw](https://github.com/openclaw/openclaw) | `clawteam spawn tmux openclaw --team ...` | ✅ Full support |
-| [nanobot](https://github.com/HKUDS/nanobot) | `clawteam spawn tmux nanobot --team ...` | ✅ Full support |
-| [Kimi CLI](https://github.com/MoonshotAI/kimi-cli) | `clawteam spawn tmux kimi --team ...` | ✅ Full support |
-| [Cursor](https://cursor.com) | `clawteam spawn subprocess cursor --team ...` | 🔮 Experimental |
-| Custom scripts | `clawteam spawn subprocess python --team ...` | ✅ Full support |
-
-For provider-aware setups such as Claude Code via Moonshot Kimi, MiniMax, or Gemini via
-Vertex, use `profile` + `preset` and then spawn with `--profile`.
-
----
-
-## ✨ Features
-
-<table>
-<tr>
-<td width="50%">
-
-### 🦞 Agent Self-Organization
-- Leader agents spawn and manage worker agents
-- **Auto-injected coordination prompt** — zero manual setup
-- Workers self-report status, results, and idle state
-- Works with any CLI agent: Claude Code, Codex, OpenClaw, custom
-
-### 🌳 Workspace Isolation
-- Each agent gets its own **git worktree** (separate branch)
-- No merge conflicts between parallel agents
-- Checkpoint, merge, and cleanup commands
-- Branch naming: `clawteam/{team}/{agent}`
-
-### 📋 Task Tracking with Dependencies
-- Shared kanban: `pending` → `in_progress` → `completed` / `blocked`
-- `--blocked-by` dependency chains — **auto-unblock on completion**
-- `task wait` blocks until all tasks complete
-- Filter by status, owner; JSON output for scripting
-
-</td>
-<td width="50%">
-
-### 💬 Inter-Agent Messaging
-- Point-to-point **inboxes** (send, receive, peek)
-- **Broadcast** to all team members
-- File-based (default) or ZeroMQ P2P transport with offline fallback
-- Agents discover messages via `inbox receive`
-
-### 📊 Monitoring & Dashboards
-- `board show` — terminal kanban board
-- `board live` — auto-refreshing dashboard
-- `board attach` — **tiled tmux view** of all agents working
-- `board serve` — **Web UI** with real-time updates
-
-### 🎪 Team Templates
-- **TOML files** define team archetypes (roles, tasks, prompts)
-- One command launches a complete team: `clawteam launch <template>`
-- Built-in: AI Hedge Fund (7 agents). Create your own.
-- Variable substitution: `{goal}`, `{team_name}`, `{agent_name}`
-
-</td>
-</tr>
-</table>
-
-### 🔧 More
-
-| Feature | Description |
-|---------|-------------|
-| 📝 **Plan Approval** | Agents submit plans for leader review before execution |
-| 🔄 **Lifecycle Protocol** | Graceful shutdown request/approve/reject, idle notifications |
-| 📊 **JSON Output** | `--json` flag on all commands — agents parse structured output |
-| 🌐 **Cross-Machine** | Shared filesystem (NFS/SSHFS) or P2P transport for distributed teams |
-| 👥 **Multi-User** | Namespace agents by user — multiple humans can share a team |
-| ⚙️ **Configuration** | Persistent config: env var > config file > default priority |
-| 🔌 **Agent Skill** | Reusable skill entry for Claude Code and Codex workflows |
-
----
-
-## 🤖 How Agents Use ClawTeam
-
-When an agent is spawned via `clawteam spawn`, it receives an **auto-injected coordination prompt**:
-
-```
-## Coordination Protocol (auto-injected into every spawned agent)
-
-- 📋 Check your tasks: clawteam task list <team> --owner <your-name>
-- ▶️ Start a task:     clawteam task update <team> <id> --status in_progress
-- ✅ Finish a task:    clawteam task update <team> <id> --status completed
-- 💬 Message leader:   clawteam inbox send <team> leader "status update..."
-- 💬 Message teammate: clawteam inbox send <team> <name> "info..."
-- 📨 Check inbox:      clawteam inbox receive <team>
-- 😴 Report idle:      clawteam lifecycle idle <team>
-```
-
-This means **any CLI agent** can participate in a ClawTeam team — it just needs to run shell commands. No custom SDK, no API integration, no framework lock-in.
-
----
-
-## 📖 Command Reference
-
-<details open>
-<summary><h3>🔧 Core Commands</h3></summary>
-
-```bash
-# 🏗️ Team lifecycle
-clawteam team spawn-team <team> -d "description" -n <leader>
-clawteam team discover                    # List all teams
-clawteam team status <team>               # Show members
-clawteam team cleanup <team> --force      # Delete team
-
-# 🚀 Spawn agents
-clawteam spawn --team <team> --agent-name <name> --task "do this"
-clawteam spawn tmux codex --team <team> --agent-name <name> --task "do this"
-
-# 📋 Task management
-clawteam task create <team> "subject" -o <owner> --blocked-by <id1>,<id2>
-clawteam task update <team> <id> --status completed   # auto-unblocks dependents
-clawteam task list <team> --status blocked --owner worker1
-clawteam task wait <team> --timeout 300
-
-# 💬 Messaging
-clawteam inbox send <team> <to> "message"
-clawteam inbox broadcast <team> "message"
-clawteam inbox receive <team>             # consume messages
-clawteam inbox peek <team>                # read without consuming
-
-# 📊 Monitoring
-clawteam board show <team>                # terminal kanban
-clawteam board live <team> --interval 3   # auto-refresh
-clawteam board attach <team>              # tiled tmux view
-clawteam board serve --port 8080          # web UI
-```
-
-</details>
-
-<details>
-<summary><h3>🌳 Workspace, 📝 Plan, 🔄 Lifecycle, ⚙️ Config</h3></summary>
-
-```bash
-# 🌳 Workspace (git worktree management)
-clawteam workspace list <team>
-clawteam workspace checkpoint <team> <agent>    # auto-commit
-clawteam workspace merge <team> <agent>         # merge back to main
-clawteam workspace cleanup <team> <agent>       # remove worktree
-
-# 📝 Plan approval
-clawteam plan submit <team> <agent> "plan" --summary "TL;DR"
-clawteam plan approve <team> <plan-id> <agent> --feedback "LGTM"
-clawteam plan reject <team> <plan-id> <agent> --feedback "Revise X"
-
-# 🔄 Lifecycle
-clawteam lifecycle request-shutdown <team> <agent> --reason "done"
-clawteam lifecycle approve-shutdown <team> <request-id> <agent>
-clawteam lifecycle idle <team>
-
-# 🎪 Templates
-clawteam launch <template> --team <name> --goal "Build X"
-clawteam template list
-
-# ⚙️ Config
-clawteam config show
-clawteam config set transport p2p
-clawteam config health
-```
-
-| Setting | Env Var | Default | Description |
-|---------|---------|---------|-------------|
-| `data_dir` | `CLAWTEAM_DATA_DIR` | `~/.clawteam` | Data directory |
-| `transport` | `CLAWTEAM_TRANSPORT` | `file` | `file` or `p2p` |
-| `workspace` | `CLAWTEAM_WORKSPACE` | `auto` | `auto` / `always` / `never` |
-| `default_backend` | `CLAWTEAM_DEFAULT_BACKEND` | `tmux` | `tmux` or `subprocess` |
-| `skip_permissions` | `CLAWTEAM_SKIP_PERMISSIONS` | `true` | Auto-approve agent tools |
-
-Legacy aliases:
-`OH_*` env vars are still accepted for compatibility, but new docs and examples use `CLAWTEAM_*`.
-
-</details>
-
----
-
-## 🏗️ Architecture
-
-```
-  Human: "Optimize this LLM"
-         │
-         ▼
-  ┌──────────────┐     clawteam spawn     ┌──────────────┐
-  │ 🦞 Leader    │ ──────────────────────► │ 🤖 Worker    │
-  │ (Claude Code)│ ──────┐                │ (Claude Code)│
-  │              │       │                │ git worktree │
-  │ Uses:        │       │                │ tmux window  │
-  │ • spawn      │       │ clawteam spawn └──────────────┘
-  │ • task create│       │
-  │ • inbox send │       ▼                ┌──────────────┐
-  │ • board show │ ──────────────────────► │ 🤖 Worker    │
-  │ • task wait  │       │                │ (Codex)      │
-  └──────────────┘       │                │ git worktree │
-                         │                │ tmux window  │
-                         │ clawteam spawn └──────────────┘
-                         ▼
-                   ┌──────────────┐
-                   │ 🤖 Worker    │    Each worker uses:
-                   │ (any CLI)    │    • task list (check work)
-                   │ git worktree │    • task update (report done)
-                   │ tmux window  │    • inbox send (message leader)
-                   └──────────────┘    • inbox receive (get instructions)
-                         │
-                         ▼
-              ┌─────────────────────┐
-              │    ~/.clawteam/     │
-              │ ├── teams/   (who) │
-              │ ├── tasks/   (what)│
-              │ ├── inboxes/ (talk)│
-              │ └── workspaces/    │
-              │     (isolated code)│
-              └─────────────────────┘
-```
-
-All state lives in `~/.clawteam/` as JSON files. No database, no server, no cloud. Atomic `tmp + rename` writes ensure crash safety.
-
-| Spawn Default | Value | Override |
-|---------------|-------|----------|
-| Backend | `tmux` | `clawteam spawn subprocess ...` |
-| Command | `claude` | `clawteam spawn tmux codex ...` |
-| Workspace | `auto` (git worktree) | `--no-workspace` |
-| Permissions | skip | `--no-skip-permissions` |
-
-| Transport | How it works | When to use |
-|-----------|-------------|-------------|
-| **file** (default) | JSON files in inbox dirs | Single machine, shared FS |
-| **p2p** | ZeroMQ PUSH/PULL + file fallback | Low-latency, auto-fallback |
-
----
-
-## 🗺️ Roadmap
-
-| Phase | Version | What | Status |
-|-------|---------|------|--------|
-| **Current** | v0.3 | File + P2P (ZeroMQ) transport, Web UI, multi-user, team templates | ✅ Shipped |
-| **Phase 1** | v0.4 | Redis Transport — cross-machine messaging | 🔜 Planned |
-| **Phase 2** | v0.5 | Shared State Layer — team config and tasks across machines | 🔜 Planned |
-| **Phase 3** | v0.6 | Agent Marketplace — discover and reuse community agent templates | 💡 Exploring |
-| **Phase 4** | v0.7 | Adaptive Scheduling — dynamically reassign tasks based on agent performance | 💡 Exploring |
-| **Phase 5** | v1.0 | Production-grade — auth, permissions, audit logs | 💡 Exploring |
-
-### Milestones
-
-| Milestone | Status | Notes |
-|---|---|---|
-| v0.1.x | ✅ Shipped | Core CLI, team/task/inbox flows, board, templates, packaging. |
-| v0.2.0 | ✅ Released | Stabilization, docs refresh, spawn/workspace fixes, and release packaging. |
-| v0.3 | 📍 Roadmap baseline | File + P2P transport, Web UI, multi-user workflow, team templates. |
-
-For the longer-term plan, see [ROADMAP.md](ROADMAP.md).
-
----
-
-## 🤝 Contributing
-
-We welcome contributions! ClawTeam is designed to be extensible:
-
-- 🤖 **New agent integrations** — Add support for more AI coding agents
-- 🎪 **Team templates** — Create TOML templates for new domains (DevOps, data science, etc.)
-- 🔌 **Transport backends** — Redis, NATS, or other message transports
-- 📊 **Dashboard improvements** — Enhanced Web UI, Grafana integration
-- 📖 **Documentation** — Tutorials, best practices, agent prompt engineering guides
-
----
-
-## 📖 Acknowledgements
-
-- [@karpathy/autoresearch](https://github.com/karpathy/autoresearch) — the autonomous ML research framework used in our 8-agent swarm demo
-- [Claude Code](https://claude.ai/claude-code) and [Codex](https://openai.com/codex) — AI coding agents that work as ClawTeam team members
-- [ai-hedge-fund](https://github.com/virattt/ai-hedge-fund) — inspiration for the multi-analyst hedge fund template
-- [CLI-Anything](https://github.com/HKUDS/CLI-Anything) — sister project making all software agent-native
-
----
-
-## ⭐ Star History
-
-If you find ClawTeam helpful, please consider giving us a star! ⭐
-
-<div align="center">
-  <a href="https://star-history.com/#HKUDS/ClawTeam&Date">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=HKUDS/ClawTeam&type=Date&theme=dark" />
-      <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=HKUDS/ClawTeam&type=Date" />
-      <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=HKUDS/ClawTeam&type=Date" />
-    </picture>
-  </a>
-</div>
-
-## 📄 License
-
-MIT License — free to use, modify, and distribute.
-
----
-
-<div align="center">
-
-**ClawTeam** — *Agent Swarm Intelligence.* 🦞
-
-<sub>8 agents × 8 H100s × 2430 experiments × one CLI × one swarm</sub>
-
-<br>
-
-<img src="assets/icon.png" alt="ClawTeam" width="80">
-
-</div>
-
-<p align="center">
-  <em>Thanks for visiting ✨ ClawTeam!</em><br><br>
-  <img src="https://visitor-badge.laobi.icu/badge?page_id=HKUDS.ClawTeam&style=for-the-badge&color=00d4ff" alt="Views">
-</p>
+## Where everything lives
+
+| Surface | Location |
+|---|---|
+| Board server + UI | `clawteam/board/` (server.py, static/index.html, static/rgds/) |
+| Media pipeline + providers | `clawteam/media/` (jobs, assets, router, characters, presets, threed, providers/) |
+| OCR bridge | `clawteam/board/ocr_tools.py` + `/api/ocr/*` |
+| Stage layer | `clawteam/stage/` + `clawteam stage` CLI |
+| Autonomy engine (decide/blockers/forks/critics/governors/stuck) | `clawteam/autonomy/` + `clawteam autonomy` CLI |
+| Keep It Simple + Parent Gate | `clawteam/kis/` + `/api/kis/*` |
+| One-shot ship + team template | `clawteam/cli/commands.py` (`ship`, `launch`), `clawteam/templates/fullstack-commercial.toml` |
+| Tests | `tests/` (board, media, photohost, stage, autonomy, wp3, wp5, wp6, wp7, board_ocr, templates, …) |
+| Decision log / anchors | `docs/DECISION_LOG.md` (D-001…D-019) · `ANCHOR_POINTS.md` |
+| Deep docs | `docs/ARCHITECTURE.md` · `docs/MEDIA_STUDIO.md` · `docs/AUTONOMY_POLICY.md` · `docs/KEEP_IT_SIMPLE_SPEC.md` · `docs/SWARM_TEAM_SPEC.md` · `docs/BUILD_PLAN.md` |
+
+**Never**: push to upstream `origin`, write a secret value anywhere, hardcode a style value,
+bind `0.0.0.0`, double-submit to a paid provider, or ask the human anything that isn't an
+Absolute Blocker. Full law: `ANCHOR_POINTS.md`.

@@ -1,7 +1,7 @@
 # Autonomous Ship Runtime + Media Studio — Doc Pack Index
 
 This pack tells a build agent exactly what to finish, what must never change, and how to prove it is done. It **extends** the
-existing docs (`BLUEPRINT.md`, `BOOTSTRAP.md`, `ARCHITECTURE.md`, `OPERATIONS.md`, `MEDIA_STUDIO.md`, `HANDOFF.md`, `.rules/*`);
+existing docs (`docs/SWARM_BLUEPRINT.md`, `BOOTSTRAP.md`, `ARCHITECTURE.md`, `OPERATIONS.md`, `MEDIA_STUDIO.md`, `HANDOFF.md`, `.rules/*`);
 it does not replace them. It is installed in the repo; the original authoring copy is in `C:\Users\ynotf\Downloads\ClawTeam`.
 
 ## Start here
