@@ -21,13 +21,6 @@
       "args": [
         "D:\\ComfyUI\\comfyui_mcp.py"
       ]
-    },
-    "iureocr": {
-      "type": "stdio",
-      "command": "I:\\LocalApps\\IureOCR\\app\\iureocr.exe",
-      "args": [
-        "--mcp"
-      ]
     }
   }
 }
